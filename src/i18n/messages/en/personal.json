@@ -1,0 +1,18 @@
+{
+    "name": {
+        "full": "Chen Zhao",
+        "given": "Chen",
+        "family": "Zhao",
+        "initials": "ZC"
+    },
+    "subtitle": "赵 陈, M.S.",
+    "headline": "Student | Job Hunting\nAI Application Development",
+    "welcome": "Welcome to my homepage!",
+    "ogImageUrl": "zangwei.dev",
+    "bioMarkdown": "Hello, I'm Zhao Chen 👋👋, a Master's student in Biomedical Engineering (BME) at ![CityU Logo](/icon/cityu.png) [City University of Hong Kong (CityU)](https://www.cityu.edu.hk/). \n\nMy learning journey has been a bit **unconventional** 😂: Undergraduate background rooted in the interdisciplinary field of **Medical Informatics**; later developed a passion for **Computer Vision (CV)**, self-taught OpenCV, deep learning-based image detection/segmentation/human pose estimation, and attempted to solve few-shot segmentation problems; now fully immersed in the world of **Large Language Models (LLMs)**, exploring the intersection of natural language processing and biomedical engineering. For more details about my background, feel free to check my [resume](./resume.pdf). \n\n💻 **Recent Learning & Projects:** \n- Systematically mastered core principles of LLMs, from Transformer architecture to pre-training/fine-tuning workflows, and built & implemented a ChatGPT-2 model from scratch using PyTorch; \n- currently working on two projects:\n  1.  Enterprise RAG System (Addressing intelligent retrieval and Q&A needs for internal enterprise documents)\n  2.  AI Search Application (Enabling fast retrieval of massive data with Elasticsearch (ES)); \n- future exploration focus: The potential of **Small Language Models (SLMs)**; \n- detailed learning notes, reproduction codes, and more are available on my [GitHub](https://github.com/chenzhao-labs). \n\n🔍 **Career Goal:** To integrate my interdisciplinary background in medical-engineering and LLM expertise, exploring the practical applications of AI in healthcare, and becoming a cross-disciplinary engineer proficient in both healthcare and algorithms. \n\n🔬 **Research Interests:** Large Language Models (LLMs), Generative Artificial Intelligence (GenAI)",
+    "location": {
+        "name": "HongKong",
+        "mapUrl": "https://www.google.com/maps/place/hongkong"
+    },
+    "blogTagline": "Thoughts on AI, software, life and more. Short notes and longer write-ups."
+}

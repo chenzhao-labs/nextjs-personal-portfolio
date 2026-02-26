@@ -1,14 +1,14 @@
 # Portfolio with Blog Template for Next.js 16 with App Router, Tailwind CSS 4, TypeScript
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fzhengzangw%2Fnextjs-portfolio-blog-research)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)
 
 [![Demo Screenshot](.github/asset/sceenshot.png)](https://www.zangwei.dev/)
 
-[Documentation →](https://www.zangwei.dev/open-source/nextjs-portfolio-blog-research/docs)
+[Documentation →](https://docs.zangwei.dev/)
 
 ## Demo
 
-- This repo on Vercel: [https://nextjs-portfolio-blog-research.vercel.app/](https://nextjs-portfolio-blog-research.vercel.app/)
+- This repo on Vercel: [https://my-portfolio-site.vercel.app/](https://my-portfolio-site.vercel.app/)
 - My portfolio: [zangwei.dev](https://www.zangwei.dev/)
 
 ## Features
@@ -23,7 +23,7 @@ A modern portfolio website with an integrated blog, supporting seamless AI-assis
 - 🧭 **Intuitive navigation:** Clean navbar, stylish footer, and simple language switching.
 - 🌐 **Social integration:** Plenty of modern social media icons to connect everywhere.
 - 🤖 **AI-assisted coding:** Seamless with [Cursor](https://www.cursor.com/) and [Cursor Rules](./.cursor).
-- 📚 **Detailed docs:** Start fast & customize deep with [full documentation](https://docs-nextjs-portfolio-blog-research.zangwei.dev/).
+- 📚 **Detailed docs:** Start fast & customize deep with [full documentation](https://docs.zangwei.dev/).
 
 **Built with cutting-edge tech:**
 
@@ -51,8 +51,8 @@ Spin up your own portfolio site in **minutes**!
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/zhengzangw/nextjs-portfolio-blog-research
-cd nextjs-portfolio-blog-research
+git clone https://github.com/chenzhao-labs/nextjs-personal-portfolio
+cd nextjs-personal-portfolio
 pnpm install    # or: npm install | yarn install
 ```
 
@@ -77,10 +77,9 @@ The repo includes example portfolio data and blog posts so you'll see real conte
 ### 🚀 Deploy to Vercel Instantly
 
 Click  
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fzhengzangw%2Fnextjs-portfolio-blog-research)  
-Your portfolio will be live in minutes! No config needed. Vercel’s generous free plan is perfect for personal and demo sites.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)  
+Your portfolio will be live in minutes! No config needed. Vercel's generous free plan is perfect for personal and demo sites.
 
 ---
 
-Find more details and advanced guides in the [Documentation](https://www.zangwei.dev/open-source/nextjs-portfolio-blog-research/docs).
-# 个人主页 GitHub 项目 readme文件
+Find more details and advanced guides in the [Documentation](https://docs.zangwei.dev/).

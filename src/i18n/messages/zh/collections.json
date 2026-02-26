@@ -1,0 +1,599 @@
+{
+  "news": {
+    "items": [
+      {
+        "date": "2026.02",
+        "title": "新春快乐",
+        "content": "🎆🐉 老师，我太想进步了！祝所有人新春快乐 🐎🎆"
+      },
+      {
+        "date": "2026.01",
+        "title": "新的一年",
+        "content": "🎆🐉 新的一年，继续努力赚钱，迎娶柳岩！ 🐎🎆"
+      },
+      {
+        "date": "2025.06",
+        "title": "从[徐州医科大学](https://www.xzhmu.edu.cn/)毕业",
+        "content": "🎓 获得徐州医科大学学士学位。感谢父母全力支持并祝福所有老师和同学！"
+      },
+      {
+        "date": "2025.04",
+        "title": "加入[香港城市大学 BME](https://www.cityu.edu.hk/bme/) 硕士项目",
+        "content": "📚 我将进入香港城市大学 BME，开始我的硕士课程学习！"
+      },
+      {
+        "date": "2024.12",
+        "title": "南京鼓楼医院集团宿迁医院实习",
+        "content": "💼 很高兴开始在南京鼓楼医院集团宿迁医院实习！"
+      },
+      {
+        "date": "2024.12",
+        "title": "论文接收（[B/S Systerm](https://kns.cnki.net/kcms2/article/abstract?v=zWoS8hcslzDxvvNFtoONEQguZ-lcoqdf3PRu-uYpywtpdX4kwNjzF6JtQj4PiWAO5RcxZY9vz5TRdc5QEEfdnLUCuvRXP5eFdw5oAcXtDmBNnd0qYS5ohZmYUA625xA7gpGPvVSiP9IKzYosmFjOC3Pj1vcx8CQ8gIYrGfaa2EHvfQNRgs9nXg&uniplatform=NZKPT&captchaId=a220705e-b35e-42cb-9d4a-72b5b6e54b01)，SOFTWARE 2024）",
+        "content": "📘 自己的一篇第一作者论文被 SOFTWARE 2024 接收。感谢导师 [BoMing Song](https://xxxy.xzhmu.edu.cn/info/1012/2642.htm)！"
+      },
+      {
+        "date": "2024.04",
+        "title": "竞赛获奖（第一作者 蓝桥杯全国软件和信息技术专业人才大赛 三等奖）",
+        "content": "🥇 竞赛获奖。感谢所有合作伙伴、指导导师 [Chuan Wu](https://xxxy.xzhmu.edu.cn/info/1012/2644.htm)！"
+      },
+      {
+        "date": "2024.04",
+        "title": "竞赛获奖（第一作者 亚太地区大学生数学建模竞赛 二等奖）",
+        "content": "🥇 竞赛获奖。感谢所有合作伙伴、指导导师 [Chuan Wu](https://xxxy.xzhmu.edu.cn/info/1012/2644.htm)！"
+      },
+      {
+        "date": "2024.03",
+        "title": "论文接收（[Wearable Sensors](https://kns.cnki.net/kcms2/article/abstract?v=zWoS8hcslzDk_q0nChB2-wOXoz9WqqvjeIffHVnjWnldNypGkg_LJyVhYcEZ--ajj7tjwEqWog--dXbNi-fru4t9BRYAs91jtjCLcu_66FuuU2U6VJdl4bt6E-FBHiG_0vtxDR-4qUuS43ACNjXVi--pYYJ_xYcDRymX9uottZagxwgMOl3jvK4Up3st2T1S2hrpJ_nHYZ0&uniplatform=NZKPT&captchaId=1e47fa20-d9e5-4b02-96d8-a0f345bb8c0f)，Scientific and Technological Innovation 2024）",
+        "content": "📘 自己的一篇第一作者论文被 Scientific and Technological Innovation 2024 接收。感谢导师 [BoMing Song](https://xxxy.xzhmu.edu.cn/info/1012/2642.htm)！"
+      },
+      {
+        "date": "2023.12",
+        "title": "论文接收（第一作者 [FCN-HRNet](https://ieeexplore.ieee.org/document/10408576)，AUTEEE 2023）",
+        "content": "📘 自己的第一篇论文被 AUTEEE 2023 接收。"
+      },
+      {
+        "date": "2023.10",
+        "title": "论文接收（第四作者 [CNN-BiLSTM](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0294174)，PLOS ONE 2023）",
+        "content": "📑 有一篇第四作者论文被 PLOS ONE 2023 接收。感谢所有老师、学长！"
+      },
+      {
+        "date": "2022.09",
+        "title": "竞赛获奖（第一作者 全国大学生数学建模竞赛 二等奖）",
+        "content": "🥇 竞赛获奖。感谢所有合作伙伴、指导导师 [Chuan Wu](https://xxxy.xzhmu.edu.cn/info/1012/2644.htm)！"
+      },
+      {
+        "date": "2022.08",
+        "title": "竞赛获奖（第一作者 国际高校数学建模竞赛 F奖）",
+        "content": "🥇 竞赛获奖。感谢所有合作伙伴、指导导师 [BoMing Song](https://xxxy.xzhmu.edu.cn/info/1012/2642.htm)！"
+      },
+      {
+        "date": "2022.08",
+        "title": "竞赛获奖（第八作者 江苏省互联网+创新创业大赛 三等奖）",
+        "content": "🥈 竞赛获奖。感谢所有合作伙伴、指导导师 [BoMing Song](https://xxxy.xzhmu.edu.cn/info/1012/2642.htm)！"
+      },
+      {
+        "date": "2023.07",
+        "title": "竞赛获奖（第一作者 中国大学生计算机设计大赛 二等奖）",
+        "content": "🥇 竞赛获奖。感谢所有合作伙伴、指导导师 [Wei Liu](https://xxxy.xzhmu.edu.cn/info/1012/2658.htm)！"
+      },
+      {
+        "date": "2023.06",
+        "title": "竞赛获奖（第一作者 五一数学建模竞赛 三等奖）",
+        "content": "🥇 竞赛获奖。感谢所有合作伙伴、指导导师 [Chuan Wu](https://xxxy.xzhmu.edu.cn/info/1012/2644.htm)！"
+      },
+      {
+        "date": "2023.05",
+        "title": "竞赛获奖（第一作者 MathorCup高校数学建模挑战赛 三等奖）",
+        "content": "🥇 竞赛获奖。感谢所有合作伙伴、指导导师 [Chuan Wu](https://xxxy.xzhmu.edu.cn/info/1012/2644.htm)！"
+      },
+      {
+        "date": "2023.05",
+        "title": "竞赛获奖（第一作者 江苏省大学生计算机设计大赛 一等奖）",
+        "content": "🥇 竞赛获奖。感谢所有合作伙伴、指导导师 [Wei Liu](https://xxxy.xzhmu.edu.cn/info/1012/2658.htm)！"
+      },
+      {
+        "date": "2022.04",
+        "title": "竞赛获奖（第四作者 全国大学生市场调查与分析大赛 三等奖）",
+        "content": "🥈 竞赛获奖。感谢所有合作伙伴、指导导师 [Chuan Wu](https://xxxy.xzhmu.edu.cn/info/1012/2644.htm)！"
+      }
+    ]
+  },
+  "projects": {
+    "items": [
+      {
+        "title": "从0-1开始搭建大模型",
+        "href": "",
+        "dates": "2026年01月 - 2026年02月",
+        "active": true,
+        "description": "记录自己从0到1搭建 GPT-2的全过程",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-build-LLMs.png",
+        "video": ""
+      },
+      {
+        "title": "本网站模板",
+        "href": "https://github.com/chenzhao-labs/nextjs-personal-portfolio",
+        "dates": "2026年2月",
+        "active": true,
+        "description": "本网站的模板，名为 nextjs-personal-portfolio。使用 Next.js、Tailwind CSS、Vercel 等构建。",
+        "image": "/proj/proj-portfolio-template.png",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/nextjs-personal-portfolio",
+            "icon": "github"
+          },
+          {
+            "type": "Blog",
+            "href": "/blog/note-nextjs-homepage",
+            "icon": "newspaper"
+          }
+        ]
+      }
+    ]
+  },
+  "education": {
+    "items": [
+      {
+        "school": "香港城市大学",
+        "href": "https://www.cityu.edu.hk/",
+        "degree": "生物医学工程硕士学位",
+        "logoUrl": "/icon/cityu.png",
+        "start": "2025",
+        "end": "2026"
+      },
+      {
+        "school": "徐州医科大学",
+        "href": "https://www.xzhmu.edu.cn/",
+        "degree": "医学信息工程学士学位（前3%）",
+        "logoUrl": "/icon/xzmu.png",
+        "start": "2021",
+        "end": "2025"
+      }
+    ]
+  },
+  "work": {
+    "items": [
+      {
+        "company": "南京鼓楼医院集团宿迁医院",
+        "href": "https://www.suqianhospital.com/main.htm",
+        "badges": [],
+        "location": "江苏",
+        "title": "工程实习生",
+        "logoUrl": "/icon/spl.jpg",
+        "start": "2024年12月",
+        "end": "2025年5月",
+        "description": "从事医院信息系统维护工作，师从熊俊辰!"
+      }
+    ]
+  },
+  "awards": {
+    "items": [
+      {
+        "year": 2025,
+        "title": "徐州医科大学优秀毕业生"
+      },
+      {
+        "year": 2024,
+        "title": "徐州医科大学一等奖学金"
+      },
+      {
+        "year": 2023,
+        "title": "全国大学生数学建模竞赛 二等奖"
+      },
+      {
+        "year": 2023,
+        "title": "国际高校数学建模竞赛 F奖（特等奖提名）"
+      },
+      {
+        "year": 2023,
+        "title": "中国大学生计算机设计大赛 三等奖"
+      },
+      {
+        "year": 2023,
+        "title": "徐州医科大学一等奖学金"
+      },
+      {
+        "year": 2022,
+        "title": "徐州医科大学一等奖学金"
+      }
+    ]
+  },
+  "publications": {
+    "items": [
+      {
+        "title": "HRNet Semantic Segmentation",
+        "href": "https://ieeexplore.ieee.org/document/10408576",
+        "dates": "AUTEEE 2023",
+        "active": true,
+        "description": "一种基于改进FCN的无人驾驶新型语义分割方法，高效提升FCN对小目标语义分割的能力。",
+        "technologies": [
+          "HRNet",
+          "FCN",
+          "Semantic Segmentation"
+        ],
+        "authors": "**作者:** **Chen Zhao** ",
+        "links": [
+          {
+            "type": "Paper",
+            "href": "https://ieeexplore.ieee.org/document/10408576",
+            "icon": "paper"
+          }
+        ],
+        "image": "/pub/hrnet.png",
+        "video": ""
+      },
+      {
+        "title": "BiLSTM Model",
+        "href": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0294174",
+        "dates": "PLOS ONE 2023",
+        "active": true,
+        "description": "我们提出了 BiLSTM，一种基于数据手套的动态手势识别模型，利用注意力机制增强了对不同手势含义的理解。",
+        "technologies": [
+          "HMI",
+          "HGR"
+        ],
+        "authors": "**作者:** Jiawei Wu, Peng Ren, Boming Song, Ran Zhang, **Chen Zhao**, Xiao Zhang",
+        "links": [
+          {
+            "type": "Paper",
+            "href": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0294174",
+            "icon": "paper"
+          }
+        ],
+        "image": "/pub/bilstm.png",
+        "video": ""
+      },
+      {
+        "title": "Wearable Sensors",
+        "href": "https://kns.cnki.net/kcms2/article/abstract?v=A-1EuXenf_qO6viv1gt6Rneb6AG4o6g3gvcs0d_G3G7GdsLcFc1OwZes5MCDDkPFLcPN0g1XuENSSYmOzwaPvlFR-hvDJRJDUtTy4OS6sRutvluL9uNjIzOqAjVAP3xaKKs8r2ual5NYHehT-NC81wShCSfgJlAwKvPgVqLDjCy6Boj6PGKtJguqvEcoAvBzDFYB_5TMMqM&uniplatform=NZKPT&captchaId=9f090dc3-2b96-4084-adbe-533644eaac5d",
+        "dates": "Scientific and Technological Innovation 2024",
+        "active": true,
+        "description": "本文提出一种基于ZigBee的可穿戴多元数据采集节点设计,有效解决自动化、高精度肢体功能评估问题。",
+        "technologies": [
+          "CC2530",
+          "ADXL345",
+          "Surface Electromyography"
+        ],
+        "authors": "**作者:** **Chen Zhao**, Boming Song",
+        "links": [
+          {
+            "type": "Paper",
+            "href": "https://kns.cnki.net/kcms2/article/abstract?v=A-1EuXenf_qO6viv1gt6Rneb6AG4o6g3gvcs0d_G3G7GdsLcFc1OwZes5MCDDkPFLcPN0g1XuENSSYmOzwaPvlFR-hvDJRJDUtTy4OS6sRutvluL9uNjIzOqAjVAP3xaKKs8r2ual5NYHehT-NC81wShCSfgJlAwKvPgVqLDjCy6Boj6PGKtJguqvEcoAvBzDFYB_5TMMqM&uniplatform=NZKPT&captchaId=9f090dc3-2b96-4084-adbe-533644eaac5d",
+            "icon": "paper"
+          }
+        ],
+        "image": "/pub/dpj.png",
+        "video": ""
+      },
+      {
+        "title": "B/S Systerm",
+        "href": "https://www.bing.com/search?q=%E5%9C%A8%E7%BA%BF%E7%BF%BB%E8%AF%91&form=ANNTH1&refig=697b57d806d34e04b314745f521d85e6&pc=CNNDDB&adppc=EDGEDBB&pqlth=0&assgl=4&sgcn=%E5%9C%A8%E7%BA%BF%E7%BF%BB%E8%AF%91&qs=HS&sgtpv=HS&smvpcn=0&swbcn=6&sctcn=0&sc=6-0&sp=1&ghc=0&cvid=697b57d806d34e04b314745f521d85e6&clckatsg=1&hsmssg=0",
+        "dates": "SOFTWARE 2024",
+        "active": true,
+        "description": "本文设计了一种基于B/S架构的居家康复服务系统，有效解决居家康复资源分配不均和医患信息交互不畅的问题。",
+        "technologies": [
+          "B/S Model",
+          "SpringMVC Architecture"
+        ],
+        "authors": "**作者:** **Chen Zhao**, Boming Song",
+        "links": [
+          {
+            "type": "Paper",
+            "href": "https://www.bing.com/search?q=%E5%9C%A8%E7%BA%BF%E7%BF%BB%E8%AF%91&form=ANNTH1&refig=697b57d806d34e04b314745f521d85e6&pc=CNNDDB&adppc=EDGEDBB&pqlth=0&assgl=4&sgcn=%E5%9C%A8%E7%BA%BF%E7%BF%BB%E8%AF%91&qs=HS&sgtpv=HS&smvpcn=0&swbcn=6&sctcn=0&sc=6-0&sp=1&ghc=0&cvid=697b57d806d34e04b314745f521d85e6&clckatsg=1&hsmssg=0",
+            "icon": "paper"
+          }
+        ],
+        "image": "/pub/ssm.png",
+        "video": ""
+      }
+    ]
+  },
+  "invitedTalks": {
+    "items": [
+      {
+        "host": "QbitAI",
+        "url": "https://zhuanlan.zhihu.com/p/605329331",
+        "date": "2023.02",
+        "title": "点击率预测模型的大批量训练",
+        "logoUrl": "/icon/qbitai.png"
+      },
+      {
+        "host": "TechBeat",
+        "url": "https://www.techbeat.net/talk-info?id=762",
+        "date": "2023.03",
+        "title": "推荐模型的大批量训练",
+        "logoUrl": "/icon/techbeat.png"
+      },
+      {
+        "host": "分布式人工智能（DAI）会议，由 *Wenbin Li* 邀请",
+        "url": "https://docs.google.com/presentation/d/123kehRyZqkr21ZWxjPyMU8_lMx6ki3g9vWIT3E1glQo/edit?usp=sharing",
+        "date": "2023.12",
+        "title": "预训练基础模型上的持续学习",
+        "logoUrl": "/icon/dai.png"
+      },
+      {
+        "host": "新加坡国立大学",
+        "url": "",
+        "date": "2024.03",
+        "title": "视频生成模型",
+        "logoUrl": "/icon/nus.png"
+      },
+      {
+        "host": "英伟达，由 *Yuyang Zhao* 邀请",
+        "url": "",
+        "date": "2025.03",
+        "title": "使用 Open-Sora 进行高效训练",
+        "logoUrl": "/icon/nvidia.png"
+      },
+      {
+        "host": "腾讯，由 *Kai Wang* 邀请",
+        "url": "https://docs.google.com/presentation/d/1-ds5dfFZARYxN60Q_4fjcDV-GFwYpOcCoJzSLIyak-Q/edit?usp=sharing",
+        "date": "2025.09",
+        "title": "从零开始的 AI 视频生成模型",
+        "logoUrl": "/icon/tencent.png"
+      },
+      {
+        "host": "新加坡国立大学",
+        "url": "",
+        "date": "2025.11",
+        "title": "从视频生成到商业智能体",
+        "logoUrl": "/icon/nus.png"
+      }
+    ]
+  },
+  "teaching": {
+    "items": [
+      {
+        "date": "2022年秋季",
+        "location": "新加坡国立大学",
+        "title": "CS5242: 神经网络与深度学习"
+      },
+      {
+        "date": "2020年秋季",
+        "location": "南京大学",
+        "title": "算法分析与设计"
+      }
+    ]
+  },
+  "skills": [
+    "PyTorch",
+    "TensorFlow/Keras",
+    "Hugging Face",
+    "OpenAI API",
+    "Azure OpenAI API",
+    "阿里云通义千问API",
+    "vLLM",
+    "Transformers",
+    "LangChain/LangGraph",
+    "LLaMA Factory",
+    "LoRA/QLoRA",
+    "RAG",
+    "Function Calling",
+    "Prompt Engineering",
+    "FastMCP",
+    "Gradio/Streamlit",
+    "Gemma/LLaMA/Mistral",
+    "Ollama",
+    "Python",
+    "HTML/CSS/JavaScript",
+    "TypeScript",
+    "React",
+    "Next.js",
+    "Vue"
+  ],
+  "reviewerConferences": [
+    "NeurIPS",
+    "ICLR",
+    "CVPR",
+    "ECCV",
+    "AAAI"
+  ],
+  "reviewerJournals": [
+    "Pattern Recognition",
+    "TIP",
+    "TSMC-S"
+  ],
+  "social": {
+    "GitHub": {
+      "name": "GitHub",
+      "url": "https://github.com/chenzhao-labs",
+      "icon": "github",
+      "navbar": false,
+      "content": true,
+      "footer": true
+    },
+    "GoogleScholar": {
+      "name": "谷歌学术",
+      "url": "/coming-soon",
+      "icon": "googlescholar",
+      "navbar": false, 
+      "content": true,
+      "footer": true
+    },
+    "orcid": {
+      "name": "ORCID",
+      "url": "/coming-soon",
+      "icon": "orcid",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "dblp": {
+      "name": "DBLP",
+      "url": "/coming-soon",
+      "icon": "dblp",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "researchgate": {
+      "name": "ResearchGate",
+      "url": "/coming-soon",
+      "icon": "researchgate",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "semanticScholar": {
+      "name": "Semantic Scholar",
+      "url": "/coming-soon",
+      "icon": "semanticScholar",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "LinkedIn": {
+      "name": "LinkedIn",
+      "url": "/coming-soon",
+      "icon": "linkedin",
+      "navbar": false,
+      "content": true,
+      "footer": true
+    },
+    "X": {
+      "name": "X",
+      "url": "/coming-soon",
+      "icon": "x",
+      "navbar": false,
+      "content": true,
+      "footer": true
+    },
+    "bluesky": {
+      "name": "Bluesky",
+      "url": "/coming-soon",
+      "icon": "bluesky",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "facebook": {
+      "name": "Facebook",
+      "url": "/coming-soon",
+      "icon": "facebook",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "instagram": {
+      "name": "Instagram",
+      "url": "/coming-soon",
+      "icon": "instagram",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "telegram": {
+      "name": "Telegram",
+      "url": "/coming-soon",
+      "icon": "telegram",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "discord": {
+      "name": "Discord",
+      "url": "/coming-soon",
+      "icon": "discord",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "medium": {
+      "name": "Medium",
+      "url": "/coming-soon",
+      "icon": "medium",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "substack": {
+      "name": "Substack",
+      "url": "/coming-soon",
+      "icon": "substack",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "producthunt": {
+      "name": "Product Hunt",
+      "url": "/coming-soon",
+      "icon": "producthunt",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "Zhihu": {
+      "name": "知乎",
+      "url": "/coming-soon",
+      "icon": "zhihu",
+      "navbar": false,
+      "content": true,
+      "footer": true
+    },
+    "Xiaohongshu": {
+      "name": "小红书",
+      "url": "/coming-soon",
+      "icon": "xiaohongshu",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "weibo": {
+      "name": "微博",
+      "url": "/coming-soon",
+      "icon": "weibo",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "wechat": {
+      "name": "微信",
+      "url": "/coming-soon",
+      "icon": "wechat",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "email": {
+      "name": "邮箱",
+      "url": "mailto:czhao225-c@my.cityu.edu.hk",
+      "icon": "email",
+      "navbar": false,
+      "content": true,
+      "footer": false
+    },
+    "rss": {
+      "name": "RSS",
+      "url": "/coming-soon",
+      "icon": "rss",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    },
+    "calendly": {
+      "name": "Calendly",
+      "url": "/coming-soon",
+      "icon": "calendly",
+      "navbar": false,
+      "content": false,
+      "footer": false
+    },
+    "ethereum": {
+      "name": "Ethereum",
+      "url": "/coming-soon",
+      "icon": "ethereum",
+      "navbar": false,
+      "content": false,
+      "footer": true
+    }
+  }
+}
