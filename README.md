@@ -1,6 +1,6 @@
 # Portfolio with Blog Template for Next.js 16 with App Router, Tailwind CSS 4, TypeScript
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)
+<!-- [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)
 
 [![Demo Screenshot](.github/asset/sceenshot.png)](https://www.zangwei.dev/)
 
@@ -13,7 +13,7 @@
 
 ## Features
 
-A modern portfolio website with an integrated blog, supporting seamless AI-assisted coding for easy and highly flexible customization.
+A modern portfolio website with an integrated blog, supporting seamless AI-assisted coding for easy and highly flexible customization. -->
 
 - ⚙️ **Quick setup:** Get started in minutes by editing the [single config file](/src/data.tsx).
 - 📰 **Rich portfolio:** Showcase news, projects, experiences, and more.
