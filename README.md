@@ -1,19 +1,18 @@
 # Portfolio with Blog Template for Next.js 16 with App Router, Tailwind CSS 4, TypeScript
 
-<!-- [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)
 
-[![Demo Screenshot](.github/asset/sceenshot.png)](https://www.zangwei.dev/)
+[![Demo Screenshot](.github/asset/sceenshot.png)](https://www.czhao.xyz/)
 
-[Documentation →](https://docs.zangwei.dev/)
 
 ## Demo
 
-- This repo on Vercel: [https://my-portfolio-site.vercel.app/](https://my-portfolio-site.vercel.app/)
-- My portfolio: [zangwei.dev](https://www.zangwei.dev/)
+- This repo on Vercel: [https://nextjs-personal-portfolio-gamma.vercel.app/](https://nextjs-personal-portfolio-gamma.vercel.app/)
+- My portfolio: [czhao.xyz](https://www.czhao.xyz/)
 
 ## Features
 
-A modern portfolio website with an integrated blog, supporting seamless AI-assisted coding for easy and highly flexible customization. -->
+A modern portfolio website with an integrated blog, supporting seamless AI-assisted coding for easy and highly flexible customization.
 
 - ⚙️ **Quick setup:** Get started in minutes by editing the [single config file](/src/data.tsx).
 - 📰 **Rich portfolio:** Showcase news, projects, experiences, and more.
@@ -81,5 +80,3 @@ Click
 Your portfolio will be live in minutes! No config needed. Vercel's generous free plan is perfect for personal and demo sites.
 
 ---
-
-Find more details and advanced guides in the [Documentation](https://docs.zangwei.dev/).
