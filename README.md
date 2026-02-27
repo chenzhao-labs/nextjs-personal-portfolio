@@ -29,9 +29,10 @@ A modern portfolio website built with Next.js 16, Tailwind CSS 4, and TypeScript
 
 ## Preview
 
-- Personal Portfolio: [czhao.xyz](https://www.czhao.xyz/)
+- 📰 **My Portfolio:** [**czhao.xyz**](https://www.czhao.xyz/) 
+- 🎉 **Welcome to my HomePage!**
 
-## Quick Start
+## Quick Start🚀
 
 Clone the project and start the development server:
 
