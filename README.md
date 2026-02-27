@@ -1,53 +1,41 @@
-# Portfolio with Blog Template for Next.js 16 with App Router, Tailwind CSS 4, TypeScript
+# Next.js Personal Portfolio Website
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)
+A modern portfolio website built with Next.js 16, Tailwind CSS 4, and TypeScript, featuring blog support, internationalization (English/Chinese), and dark mode.
 
 [![Demo Screenshot](.github/asset/sceenshot.png)](https://www.czhao.xyz/)
 
-
-## Demo
-
-- This repo on Vercel: [https://nextjs-personal-portfolio-gamma.vercel.app/](https://nextjs-personal-portfolio-gamma.vercel.app/)
-- My portfolio: [czhao.xyz](https://www.czhao.xyz/)
-
 ## Features
 
-A modern portfolio website with an integrated blog, supporting seamless AI-assisted coding for easy and highly flexible customization.
+- 🌍 **International Support**: Built-in English/Chinese switching, easily extensible to other languages
+- 🌗 **Theme Switching**: Supports light/dark mode toggling
+- 📰 **Integrated Blog**: Write posts using MDX format
+- 📱 **Responsive Design**: Perfectly adapts to desktop, tablet, and mobile devices
+- 🤖 **SEO Optimized**: Includes metadata, JSON-LD structured data, and Open Graph tags
+- 🔍 **Search Engine Friendly**: Automatically generates sitemap.xml and robots.txt
+- 📊 **Data Analysis**: Integrates Google Analytics, Google Tag Manager, etc.
+- ⚡ **High Performance**: Optimized loading speed and performance
+- 🎨 **Modern Design**: Uses Tailwind CSS 4 and Shadcn UI components
 
-- ⚙️ **Quick setup:** Get started in minutes by editing the [single config file](/src/data.tsx).
-- 📰 **Rich portfolio:** Showcase news, projects, experiences, and more.
-- 📝 **Blog support:** Write effortlessly with Markdown in the [content/](./content) directory.
-- 🌍 **Internationalization:** Out-of-the-box I18n for English & Chinese, easily extendable to other languages.
-- 🌗 **Light & dark mode:** Instantly toggle color themes for the perfect look.
-- 🧭 **Intuitive navigation:** Clean navbar, stylish footer, and simple language switching.
-- 🌐 **Social integration:** Plenty of modern social media icons to connect everywhere.
-- 🤖 **AI-assisted coding:** Seamless with [Cursor](https://www.cursor.com/) and [Cursor Rules](./.cursor).
-- 📚 **Detailed docs:** Start fast & customize deep with [full documentation](https://docs.zangwei.dev/).
+## Tech Stack
 
-**Built with cutting-edge tech:**
+- ⚡ **Next.js 16**: Based on the latest App Router architecture
+- 🔥 **TypeScript**: Provides complete type safety
+- 💎 **Tailwind CSS 4**: Modern styling framework with the latest @import syntax
+- 💅 **UI Components**: Integrated [shadcn/ui](https://ui.shadcn.com/) component library
+- 🎬 **Animation Effects**: Smooth animations powered by Framer Motion
+- 🌐 **Internationalization**: Multi-language support via next-intl
+- 🌙 **Theme Management**: Dark mode support via next-themes
+- ✅ **Code Quality**: Configured ESLint and Prettier to ensure code standards
 
-- ⚡ **Next.js 16:** Powered by the new App Router for flexibility & speed.
-- 🔥 **TypeScript:** Full type-checking and safety.
-- 💎 **Tailwind CSS 4:** Elegant, modern styling out of the box.
-- ✅ **Strict Mode:** Takes advantage of TypeScript strictness and React 19 best practices.
-- 💅 **UI magic:** Beautiful components via [shadcn/ui](https://ui.shadcn.com/) & [magic ui](https://www.magicui.com/).
-- 🎬 **Smooth animation:** Powered by [Framer Motion](https://motion.dev/).
-- 🚀 **Vercel ready:** Deploy in seconds with global fast hosting.
-- 📱 **Responsive design:** Looks stunning on all devices.
-- 🤖 **SEO optimized:** Includes metadata, JSON-LD, and Open Graph tags for top rankings.
-- 🗺️ **Sitemap & robots:** SEO and crawling handled automatically.
-- 💯 **Lighthouse perfection:** Tuned for top performance and best practices.
-- 📊 **Analytics ready:** Connect Google Analytics 4, Google Tag Manager, and Google Search Console for powerful insights.
-- 💖 **Prettier:** Effortless code formatting.
-- 📏 **ESLint:** Linting for code quality and consistency.
-- 🏗️ **Inspired by:** [dillionverma/portfolio](https://github.com/dillionverma/portfolio)
-- 🔒 **Security:** Follows best practices for security and privacy.
+## Preview
 
-## Getting Started 🚀
+- Personal Portfolio: [czhao.xyz](https://www.czhao.xyz/)
 
-Spin up your own portfolio site in **minutes**!
+## Quick Start
 
-### 1. Clone & install
+Clone the project and start the development server:
+
+### 1. Clone and Install Dependencies
 
 ```bash
 git clone https://github.com/chenzhao-labs/nextjs-personal-portfolio
@@ -55,28 +43,26 @@ cd nextjs-personal-portfolio
 pnpm install    # or: npm install | yarn install
 ```
 
-### 2. Launch the dev server
+### 2. Start Development Server
 
 ```bash
 pnpm dev        # or: npm run dev | yarn dev
 ```
 
-Visit [`http://localhost:3000`](http://localhost:3000) to view your site.
+Visit [`http://localhost:3000`](http://localhost:3000) to view your local site.
 
-### 3. Customize your portfolio
+### 3. Customize Your Portfolio
 
-- Edit your main info in [`/src/data/site.tsx`](/src/data/site.tsx)
-- Edit all interface text & profile sections in [`/src/i18n/messages`](/src/i18n/messages)
-- Add blog posts in [`content/blog`](./content/blog) as Markdown or MDX files
+- Edit basic information in `/src/data/site.ts`
+- Modify all interface text and personal information in JSON files under `/src/i18n/messages`
+- Add blog posts in the `/content/blog` directory using Markdown or MDX format
 
-The repo includes example portfolio data and blog posts so you'll see real content right away.
+## Deploy
 
----
+One-click deployment to Vercel:
 
-### 🚀 Deploy to Vercel Instantly
+[![Deploy with Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)]
 
-Click  
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)  
-Your portfolio will be live in minutes! No config needed. Vercel's generous free plan is perfect for personal and demo sites.
+## Acknowledgements
 
----
+This project was adapted from the [Nextjs-Portfolio-Blog-Research](https://github.com/zhengzangw/nextjs-portfolio-blog-research) template. Special thanks to the original author [Zangwei Zheng](https://www.zangwei.dev) for the open-source contribution.
