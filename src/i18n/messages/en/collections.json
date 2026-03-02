@@ -101,6 +101,24 @@
   "projects": {
     "items": [
       {
+        "title": "LeetCode Essays",
+        "href": "https://github.com/chenzhao-labs/code-notes-personal",
+        "dates": "2026年01月 - 至今",
+        "active": true,
+        "description": "Record some thoughts, key points, and brilliant solutions during the process of practicing problems",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/code-notes-personal",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-code-note.png",
+        "video": ""
+      },
+      {
         "title": "Building LLMs From Scratch",
         "href": "",
         "dates": "Jan 2026 - Feb 2026",
