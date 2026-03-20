@@ -129,7 +129,7 @@
         "links": [
           {
             "type": "Github",
-            "href": "",
+            "href": "https://github.com/chenzhao-labs/Building_LLMs_from_scratch",
             "icon": "github"
           }
         ],
