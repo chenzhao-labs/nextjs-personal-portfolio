@@ -2,6 +2,11 @@
   "news": {
     "items": [
       {
+        "date": "2026.06",
+        "title": "Summer Term",
+        "content": "✎ 革命尚未成功，同志仍需努力！✎"
+      },
+      {
         "date": "2026.02",
         "title": "新春快乐",
         "content": "🎆🐉 老师，我太想进步了！祝所有人新春快乐 🐎🎆"
@@ -100,6 +105,42 @@
   },
   "projects": {
     "items": [
+      {
+        "title": "从0-1开始搭建智能体",
+        "href": "https://github.com/chenzhao-labs/Building_Agent_from_scratch",
+        "dates": "2026年06月 - 至今",
+        "active": true,
+        "description": "参考 Microsoft Agent 课程内容，利用 QWen-agent 进行改写",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/Building_Agent_from_scratch",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-build-agent.png",
+        "video": ""
+      },
+      {
+        "title": "对话式商业智能（ChatBI）",
+        "href": "https://github.com/chenzhao-labs/ChatBI",
+        "dates": "2026年03月 - 2026年05月",
+        "active": true,
+        "description": "依托QWen-Agent实现自然语言驱动的投研数据分析与自动可视化ChatBI系统",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/ChatBI",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-chatbi.png",
+        "video": ""
+      },
       {
         "title": "LeetCode 随笔",
         "href": "https://github.com/chenzhao-labs/code-notes-personal",

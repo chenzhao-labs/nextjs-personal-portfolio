@@ -2,6 +2,11 @@
   "news": {
     "items": [
       {
+        "date": "2026.06",
+        "title": "Summer Term",
+        "content": "✎ 革命尚未成功，同志仍需努力！✎"
+      },
+      {
         "date": "2026.02",
         "title": "New Year！",
         "content": "🎆🐉 Sir, I just really wanna climb the ladder! Wishing everyone a Happy Lunar New Year！ 🐎🎆"
@@ -101,9 +106,45 @@
   "projects": {
     "items": [
       {
+        "title": "Building Agent From Scratch",
+        "href": "https://github.com/chenzhao-labs/Building_Agent_from_scratch",
+        "dates": "Jun 2026 - Present",
+        "active": true,
+        "description": "Refer to the Microsoft Agent course content and use QWen-agent for rewriting",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/Building_Agent_from_scratch",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-build-agent.png",
+        "video": ""
+      },
+       {
+        "title": "Conversational Business Intelligence(ChatBI)",
+        "href": "https://github.com/chenzhao-labs/ChatBI",
+        "dates": "Mar 2026 - May 2026",
+        "active": true,
+        "description": "Implement a natural language-driven investment research data analysis and automatic visualization ChatBI system based on QWen-Agent",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/ChatBI",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-code-note.png",
+        "video": ""
+      },
+      {
         "title": "LeetCode Essays",
         "href": "https://github.com/chenzhao-labs/code-notes-personal",
-        "dates": "2026年01月 - 至今",
+        "dates": "Jan 2026 - Present",
         "active": true,
         "description": "Record some thoughts, key points, and brilliant solutions during the process of practicing problems",
         "technologies": [],
