@@ -115,13 +115,20 @@ def run_agent(system_prompt: str, user_message: str) -> str:
 
 What this loop does is essentially a "perceive-decide-act" cycle from reinforcement learning:
 
-```mermaid
-flowchart TD
-    A[User Input] --> B[LLM Decision]
-    B -->|has tool_calls| C[Execute Tool]
-    C --> D[Append Result to Messages]
-    D --> B
-    B -->|no tool_calls| E[Return Final Text]
+```
+User Input → LLM Decision
+                │
+      ┌─────────┼─────────┐
+      ▼                    ▼
+  has tool_calls      no tool_calls
+      │                    │
+      ▼                    ▼
+  Execute Tool       Return Final Text
+      │
+      ▼
+Append Result to messages
+      │
+      └────→ Back to LLM Decision
 ```
 
 Once you understand three things, every Agent framework becomes transparent:

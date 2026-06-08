@@ -115,13 +115,20 @@ def run_agent(system_prompt: str, user_message: str) -> str:
 
 这个循环做的事情本质上是一个强化学习中的"感知-决策-行动"循环：
 
-```mermaid
-flowchart TD
-    A[用户输入] --> B[LLM 决策]
-    B -->|有 tool_calls| C[执行工具]
-    C --> D[结果追加到 messages]
-    D --> B
-    B -->|无 tool_calls| E[返回最终文本]
+```
+用户输入 → LLM 决策
+              │
+    ┌─────────┼─────────┐
+    ▼                    ▼
+有 tool_calls       无 tool_calls
+    │                    │
+    ▼                    ▼
+执行工具            返回最终文本
+    │
+    ▼
+结果追加到 messages
+    │
+    └────→ 回到 LLM 决策
 ```
 
 理解了三件事后，所有 Agent 框架对你来说就是透明的：
