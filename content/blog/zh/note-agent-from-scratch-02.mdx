@@ -1,0 +1,311 @@
+---
+title: "拆解 Agent 框架：四层抽象，三十行代码的本质"
+date: "2026-06-09"
+updated: "2026-06-09"
+summary: "上篇文章手写了 tool calling 循环。这篇文章往上走一层：Agent 框架到底做了什么？拆解 Client、Agent、Tools、Session 四层抽象，每一层都用手写代码和 qwen-agent 框架对照——你会发现，框架不过是对那 30 行的工程化封装。"
+tags: ["AI Agent", "Agent Framework", "Tool Calling", "Qwen-Agent", "Python", "LLM"]
+author: "Chen Zhao"
+---
+
+上篇文章 [AI Agent 从零到一](/blog/note-agent-from-scratch) 里，我用 30 行代码手写了一个 tool calling 循环。很多读者看完后的反应是："原来 Agent 框架底层就这么简单？"
+
+是的。但框架毕竟不只是那个循环。它还做了更多工程化的事情。
+
+这篇文章往上走一层——**把一个 Agent 框架拆成四层**，每一层用手写代码和 qwen-agent 框架做对照。读完你会理解：你在框架文档里看到的每个概念，在底层对应着什么。
+
+---
+
+📦 **相关链接**
+
+- 项目仓库：[Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- 本课代码：[02-explore-agentic-frameworks/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/02-explore-agentic-frameworks/code_samples)
+- qwen-agent 框架：[QwenLM/Qwen-Agent](https://github.com/QwenLM/Qwen-Agent)
+
+---
+
+## 🎯 问题：框架到底做了什么？
+
+上篇文章的核心代码是一个 `while True` 循环：
+
+```python
+while True:
+    response = client.chat.completions.create(model=MODEL, messages=messages, tools=TOOLS_SCHEMA)
+    msg = response.choices[0].message
+    if not msg.tool_calls:
+        return msg.content
+    for tc in msg.tool_calls:
+        result = TOOL_MAP[tc.function.name](**args)
+        messages.append({"role": "tool", "content": result})
+```
+
+这段代码能跑，但它把所有东西揉在了一起：连接模型、定义工具、管理消息、执行循环。
+
+任何一个真实的 Agent 框架都会把这坨代码拆开，形成清晰的层次结构。不同的框架用不同的名字和 API，但拆分逻辑是一样的。
+
+---
+
+## 🧱 四层抽象：Client → Agent → Tools → Session
+
+我读完了 Microsoft Agent Framework、LangChain 和 qwen-agent 的源码后，总结出所有 Agent 框架共有的四层抽象：
+
+```
+┌──────────────────────────────────────────────┐
+│                                              │
+│   Client ──→ Agent ──→ Tools                 │
+│   连接         封装       能力                 │
+│                │                              │
+│                └──→ Session                   │
+│                     记忆                      │
+│                                              │
+└──────────────────────────────────────────────┘
+```
+
+每一层解决一个独立的问题。下面逐层拆解。
+
+---
+
+### 第一层：Client — 连接模型
+
+**职责**：和 AI 模型建立连接，处理认证、请求格式化、响应解析。
+
+在原生 SDK 里，Client 就是 `OpenAI(...)` 实例：
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+)
+```
+
+在 qwen-agent 里，用一个配置字典替代：
+
+```python
+llm_cfg = {
+    "model": "qwen-flash",
+    "model_type": "qwen_dashscope",
+    "api_key": api_key,
+}
+```
+
+两者做的事情完全一样：指定模型 + 认证信息 + 端点地址。框架版多了一个 `model_type`，告诉框架"这个配置该走哪个协议"——仅此而已。
+
+**关键认知**：Client 层不包含任何 Agent 逻辑。它就是一个带认证的 HTTP 客户端。所有支持 OpenAI 兼容接口的模型（千问、DeepSeek、Moonshot 等）都可以无缝切换，只改 `base_url` 和 `api_key`。
+
+---
+
+### 第二层：Tools — Agent 的手脚
+
+**职责**：定义 Agent 可以调用的函数，告诉 LLM"我能做什么"。
+
+每个工具需要两样东西：
+
+1. **Python 函数** — 真正执行的逻辑
+2. **JSON Schema** — 告诉 LLM 函数名、描述、参数类型
+
+原生版需要手写这两样并手动关联：
+
+```python
+def check_destination_availability(destination: str) -> str:
+    """检查度假目的地是否可预订。"""
+    available = {"巴塞罗那": True, "东京": True, "巴黎": False}
+    return f"{destination} {'可预订' if available.get(destination, False) else '不可预订'}"
+
+# Schema 要单独手写
+TOOLS_SCHEMA = [{
+    "type": "function",
+    "function": {
+        "name": "check_destination_availability",
+        "description": "检查度假目的地是否可预订。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "type": "string",
+                    "description": "要检查的目的地名称",
+                },
+            },
+            "required": ["destination"],
+        },
+    },
+}]
+
+# 名字到函数的映射也是手动的
+TOOL_MAP = {"check_destination_availability": check_destination_availability}
+```
+
+qwen-agent 用 `@register_tool` + `BaseTool` 把这三件事合并到一起：
+
+```python
+@register_tool("check_destination_availability")
+class CheckDestinationAvailability(BaseTool):
+    description = "检查度假目的地是否可预订。"
+    parameters = [
+        {
+            "name": "destination",
+            "type": "string",
+            "description": "要检查的目的地名称",
+            "required": True,
+        },
+    ]
+
+    def call(self, params: str, **kwargs) -> str:
+        args = json.loads(params) if isinstance(params, str) else params
+        destination = args.get("destination", "")
+        available = {"巴塞罗那": True, "东京": True, "巴黎": False}
+        return f"{destination} {'可预订' if available.get(destination, False) else '不可预订'}"
+```
+
+**框架帮你做了**：从 `parameters` 列表自动生成 JSON Schema，省去了手写 schema 和手动建立映射的两步。但本质上，传给 LLM 的还是同一份 JSON Schema。
+
+**关键认知**：Tools 层是 Agent "能做事的范围"。你能做什么，取决于你注册了什么工具。这也是为什么在实际项目中，工具定义往往是最大量的代码——不是框架复杂，是你的业务逻辑复杂。
+
+---
+
+### 第三层：Agent — 把一切打包
+
+**职责**：把 Client + 指令 + Tools 打包成一个可对话的对象。
+
+原生版里，这层就是你手动维护的 `messages` 列表 + `system_prompt` + `run_agent()` 函数：
+
+```python
+SYSTEM_PROMPT = "你是一个旅行预订代理。在推荐目的地之前，务必先检查可用性。"
+
+def run_agent(user_message: str, messages: list[dict]) -> str:
+    messages.append({"role": "user", "content": user_message})
+    # ... tool calling 循环 ...
+    return result
+```
+
+qwen-agent 提供了 `Assistant` 类来做这件事：
+
+```python
+agent = Assistant(
+    llm=llm_cfg,                          # Client 层
+    name="TravelAvailabilityAgent",
+    system_message=SYSTEM_PROMPT,          # 指令
+    function_list=["check_destination_availability"],  # Tools 层
+)
+```
+
+`Assistant` 就是 Client + 指令 + Tools 的"打包盒"。你不再需要手动维护 `messages` 列表和 `while True` 循环——这些都被封装在 `agent.run()` 里。
+
+**关键认知**：Agent 层是框架的"用户体验"。`Assistant`、`create_agent()`、`AgentExecutor`——不同的框架有不同的类名，但它们的构造函数参数永远是三样东西：模型配置、系统指令、工具列表。
+
+---
+
+### 第四层：Session — 多轮记忆
+
+**职责**：在多轮对话间保持上下文。
+
+这是最容易被误解的一层。很多人以为框架的 session 是什么黑魔法，实际上：
+
+> **Session 就是一个 messages 列表在多次调用间保持引用。**
+
+原生版没有任何魔法：
+
+```python
+# 创建 session
+session = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+# 第 1 轮
+reply = run_agent("我想去巴黎，是否可以预订？", session)  # session 追加了 user/assistant/tool 消息
+print(reply)
+
+# 第 2 轮 — session 已经包含第 1 轮的所有上下文
+reply = run_agent("我想去暖和的地方。有哪些可用的？", session)
+print(reply)
+
+# session 里共有多少条消息？
+print(f"[Session 中共有 {len(session)} 条消息]")
+```
+
+qwen-agent 没有显式的 session 对象，但做法一样——把 messages 列表保留在外部，每次传给 `agent.run()`：
+
+```python
+session = []  # 就是一个空列表
+
+# 第 1 轮
+reply = run_turn("我想去巴黎，是否可以预订？", session)
+
+# 第 2 轮 — session 已被 run_turn 更新
+reply = run_turn("我想去暖和的地方。有哪些可用的？", session)
+```
+
+不同的框架对 session 的封装程度不同：
+
+| 框架 | Session 实现 |
+|------|-------------|
+| 原生 SDK | `messages = []`，手动维护 |
+| qwen-agent | `messages = []`，手动维护 |
+| MAF | `agent.create_session()` 返回 `AgentSession` 对象 |
+| LangChain | `RunnableWithMessageHistory` 包装器 |
+
+但底层都一样——不断追加消息到同一个列表：`[system, user, assistant, tool, assistant, user, assistant, ...]`。
+
+**关键认知**：短期记忆 = 消息列表。长期记忆 = 外部存储（数据库/向量库）+ 工具。框架不提供"记忆能力"本身，它只提供管理消息列表的便利函数。
+
+---
+
+## 🔄 完整对照
+
+把四层放在一起看：
+
+| 层级 | 原生 SDK | qwen-agent |
+|------|----------|------------|
+| **Client** | `OpenAI(base_url=..., api_key=...)` | `llm_cfg = {"model_type": "qwen_dashscope"}` |
+| **Tools** | `TOOLS_SCHEMA` 字典 + Python 函数 + `TOOL_MAP` | `@register_tool("name")` + `BaseTool` |
+| **Agent** | `SYSTEM_PROMPT` + `run_agent()` 函数 | `Assistant(llm=..., system_message=..., function_list=[...])` |
+| **Session** | `messages = []` 列表 | `session = []` 列表 |
+
+---
+
+## 💡 三个关键认知
+
+**1. 框架不提供"Agent 能力"，它只是组织代码的方式**
+
+Tool calling 能力来自 LLM API（所有主流模型都支持）。框架做的事是让你不需要手写 schema、映射、循环和消息管理。它"替你"做，而不是"替你提供"。
+
+**2. 四层抽象是通用的**
+
+不管你现在用 qwen-agent，明天换 LangChain，后天换 AutoGen——这四层永远在。变的只是类名和参数名，结构不变。你在原生版里学到的 `messages.append()`，在任何一个框架的 session 对象里都是一样的东西。
+
+**3. 理解层与层的边界，才知道出问题时该看哪里**
+
+- LLM 没调用工具？→ 检查 Tools 层的 Schema 是否正确
+- Agent 忘记上下文？→ 检查 Session 层的 messages 列表是否正确追加
+- 连接报错？→ 检查 Client 层的 `api_key` 和 `base_url`
+- Agent 行为不符预期？→ 检查 Agent 层的 `system_message`
+
+每个问题对应一层，不会在代码里瞎找。
+
+---
+
+## 🚀 运行起来
+
+```bash
+cd 02-explore-agentic-frameworks/code_samples
+
+# 先手写，理解四层结构
+python 02-python-agent-framework.py
+
+# 再看框架，体会封装
+python 02-qwen-agent-framework.py
+```
+
+---
+
+## 🔮 下一篇
+
+有了这四层的基础，下一篇将进入更实用的主题——**Agentic 设计模式**：怎么给 Agent 写好的指令？怎么让 Agent 返回结构化的 JSON？怎么把任务拆给多个 Agent？
+
+所有代码和文章更新在 [Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)。
+
+---
+
+## ✍️ 结语
+
+学框架的正确顺序不是"先选框架再写代码"，而是"先手写代码再读框架文档"。当你手写过四层抽象，再看任何一个框架的文档时，你看到的不再是神秘的 API，而是"哦，这一层就是我的 `TOOLS_SCHEMA`，那一层就是我的 `messages` 列表"。
+
+**框架是你能手写的代码的工程化封装。理解了这个，你就自由了。**
