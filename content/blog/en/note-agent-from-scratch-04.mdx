@@ -1,0 +1,265 @@
+---
+title: "Agent Tool Use Design Patterns: Multi-Tool Composition, Structured Output, Tool Approval"
+date: "2026-06-10"
+updated: "2026-06-10"
+summary: "When an Agent has multiple tools, how does the LLM orchestrate call order? How can downstream code reliably consume Agent output? How do you add human approval for side-effect operations (booking, charging)? This post covers three tool-use design patterns through a complete travel booking agent case study."
+tags: ["AI Agent", "Tool Use", "Pydantic", "Structured Output", "Qwen-Agent", "Python"]
+author: "Chen Zhao"
+---
+
+The first three posts covered the essence of Agents (the tool calling loop), the four-layer framework abstraction, and three Agentic design patterns. Those answered "what is an Agent" and "how to design one."
+
+But an Agent's capability boundary is defined by its tools. An Agent with only query tools can answer questions; one with a booking tool can complete transactions.
+
+This post uses a travel booking agent scenario to explore three tool-use design patterns.
+
+---
+
+📦 **Links**
+
+- Project repo: [Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- Lesson code: [04-tool-use/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/04-tool-use/code_samples)
+- Raw SDK version: [04-python-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/04-tool-use/code_samples/04-python-agent-framework.py)
+- qwen-agent version: [04-qwen-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/04-tool-use/code_samples/04-qwen-agent-framework.py)
+
+---
+
+## 🎯 What Problem Does Each Pattern Solve
+
+```mermaid
+flowchart LR
+    A[User Need] --> B["Pattern 1:<br/>Multi-Tool Composition"]
+    B --> C["Pattern 2:<br/>Structured Output"]
+    C --> D["Pattern 3:<br/>Tool Approval"]
+    D --> E[Complete Transactional Agent]
+
+    B -.- B1["Problem: With multiple tools,<br/>how does the LLM decide call order?"]
+    C -.- C1["Problem: How does downstream code<br/>reliably consume Agent output?"]
+    D -.- D1["Problem: How to add human confirmation<br/>for side-effect operations?"]
+```
+
+---
+
+## Pattern 1: Multi-Tool Composition
+
+### The Problem
+
+In previous lessons, the Agent had a single tool. Real-world Agents typically hold multiple tools — query destinations, check availability, look up flights, book tickets.
+
+When the tool count goes from 1 to 3+, the core question changes: **how does the LLM decide which tool to call first, which to call next, and what parameters to pass?**
+
+### The Solution: Pass All Tool Schemas to the LLM at Once
+
+No routing. No orchestration engine. Put all tool JSON Schemas into a single list and pass them to the LLM. The LLM figures out which to call on its own.
+
+```mermaid
+flowchart TD
+    A["System Prompt:<br/>You are a travel agent, use tools to answer"] --> B["Tools Schema List:<br/>get_destinations<br/>check_availability<br/>get_flight_info"]
+    B --> C[LLM receives user query]
+    C --> D{"LLM decides:<br/>which tool to call?"}
+    D -->|"needs destination list"| E[call get_destinations]
+    D -->|"needs availability"| F[call check_availability]
+    D -->|"needs flight info"| G[call get_flight_info]
+    E --> H[Execute function, return result to LLM]
+    F --> H
+    G --> H
+    H --> I{"Need more<br/>information?"}
+    I -->|yes| D
+    I -->|no| J[Generate final response]
+```
+
+This is the full tool calling loop. The only difference from the single-tool version: **the TOOLS_SCHEMA list has multiple entries**.
+
+### Tool Definition Approach
+
+In the raw SDK, each tool consists of two parts: a JSON Schema (describing the tool signature) and a Python function (implementing the logic). Using `check_availability` as an example:
+
+| Component | Content |
+|-----------|---------|
+| **JSON Schema** | `name: "check_availability"`, `parameters: {destination: string}` |
+| **Python Function** | `check_availability(destination)` → lookup dictionary, return availability |
+
+After defining all three tools, they go into a `TOOLS_SCHEMA` list and a `TOOL_MAP` dictionary. The LLM knows "what tools exist" from the Schema, and your code finds the corresponding implementation via the function name returned from tool calling.
+
+In qwen-agent, use the `@register_tool` decorator to register tool classes, and pass tool name strings to `Assistant(function_list=[...])`. The framework auto-generates schemas and handles the tool calling loop internally.
+
+### Core Insight
+
+Multi-tool composition doesn't need an "orchestration engine." The LLM itself is the orchestrator — you describe the tools, and it decides the call order. Your code only needs to do two things:
+
+1. Pass tool schemas to the LLM
+2. Execute the corresponding function based on the function name returned by the LLM, and pass the result back
+
+This is the entire secret of the tool calling loop.
+
+---
+
+## Pattern 2: Structured Output
+
+### The Problem
+
+Free text is great for humans, terrible for code. If the Agent outputs "I recommend booking Barcelona, $350, flight BA 2042," a downstream auto-booking system needs to extract destination, price, and flight number from that sentence — a regex nightmare.
+
+### The Solution: Pydantic Models + JSON Constraints
+
+Define Pydantic models as the output contract, specify the JSON format in the system prompt, and validate with `model_validate_json()`.
+
+**Output Contract Definition:**
+
+| Model | Field | Type | Description |
+|-------|-------|------|-------------|
+| **BookingRecommendation** | destination | str | Destination name |
+| | available | bool | Whether bookable |
+| | flight_details | str | Flight details |
+| | estimated_cost | int | Estimated cost (USD) |
+| **TravelPlan** | recommendations | list[BookingRecommendation] | Recommendation list |
+
+**Format constraint in system prompt:**
+
+> Your final response must be strict JSON. Example format:
+> `{"recommendations": [{"destination": "Barcelona", "available": true, "flight_details": "BA 2042, 08:30-11:45", "estimated_cost": 350}]}`
+> Do not include markdown code block markers.
+
+### Complete Data Flow
+
+```mermaid
+flowchart TD
+    A["System Prompt:<br/>Role + Workflow + JSON format constraint"] --> B[LLM calls tools to query data]
+    B --> C["Get destinations + availability + flights"]
+    C --> D["LLM outputs per JSON Schema"]
+    D --> E{"Pydantic<br/>model_validate_json()"}
+    E -->|Success| F["Return typed TravelPlan object<br/>Downstream code uses .destination .available"]
+    E -->|Failure| G["Catch exception<br/>fallback handling"]
+```
+
+### Why Put the Format in the Prompt Instead of a Framework Parameter
+
+qwen-agent's `Assistant` has no `response_format` parameter. MAF and LangChain do, but each framework's API is different. Putting format requirements in the prompt means:
+
+- You fully control output format granularity
+- Switching frameworks doesn't require prompt changes
+- Pydantic acts as the final validation layer — format deviations are caught immediately
+
+### Difference from Lesson 03 Structured Output
+
+Lesson 03's structured output was "reasoning-only" — the Agent had no tools, and the LLM generated JSON based purely on training data. This lesson's structured output is "tool-augmented" — **the LLM first calls tools to get real data, then generates structured JSON from that data.** The output isn't fabricated; it's data-backed.
+
+---
+
+## Pattern 3: Tool Approval Mode
+
+### The Problem
+
+Query operations can run automatically, but side-effect operations (booking, charging, sending) cannot. You don't want an Agent spending the user's money without confirmation.
+
+### The Solution: Intercept Sensitive Tools Before Execution
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant LLM
+    participant ToolLoop
+    participant SensitiveTool
+
+    User->>LLM: Book me a flight LHR→BCN
+    LLM->>ToolLoop: call book_flight(origin="LHR", destination="BCN", passenger="Zhang Wei")
+    ToolLoop->>ToolLoop: Check: book_flight ∈ SENSITIVE_TOOLS?
+    ToolLoop->>User: ⚠️ Agent wants to execute book_flight, params: {...}. Approve? (y/n)
+    User->>ToolLoop: y
+    ToolLoop->>SensitiveTool: Execute booking
+    SensitiveTool-->>ToolLoop: Booked, confirmation #TRV-0421
+    ToolLoop-->>LLM: Return result
+    LLM-->>User: Flight booked, confirmation #TRV-0421
+```
+
+If the user enters `n`, the tool is never actually executed. The LLM receives "operation rejected by user" and adjusts its response accordingly.
+
+### Two Implementation Approaches
+
+| Aspect | Raw SDK | qwen-agent |
+|--------|---------|------------|
+| **Intercept point** | Inside tool calling loop, check `SENSITIVE_TOOLS` set before execution | Inside `BaseTool.call()`, `input()` prompt |
+| **Sensitivity marker** | Global `SENSITIVE_TOOLS = {"book_flight"}` set | No separate marker; tool decides internally |
+| **Approval interaction** | `input("Approve execution? (y/n): ")` | Same — `input()` blocks process, waits for input |
+
+Both approaches are fundamentally the same: **before the function actually executes, use `input()` to pause the process and wait for human confirmation.**
+
+### Why Frameworks Don't Have Built-in Approval
+
+MAF has an `approval_mode` parameter; qwen-agent doesn't. This isn't a framework deficiency — approval logic is inherently business logic, tightly coupled to tool parameters, user permissions, and risk-control policies. It's hard for a framework to provide a one-size-fits-all parameter. Writing your own `input()` interception is actually the most flexible approach.
+
+---
+
+## 💡 How the Three Patterns Compose
+
+All three patterns stack on the same travel booking Agent:
+
+```mermaid
+flowchart TD
+    subgraph "Multi-Tool Composition"
+        A1["get_destinations<br/>check_availability<br/>get_flight_info<br/>book_flight"]
+    end
+    subgraph "Structured Output"
+        A2["Pydantic TravelPlan<br/>JSON format constraint"]
+    end
+    subgraph "Tool Approval"
+        A3["book_flight marked sensitive<br/>input() interception before execution"]
+    end
+
+    User["🙋 User: Find European destinations and book"] --> A1
+    A1 --> A2
+    A2 --> A3
+    A3 --> Result["✅ Complete transaction loop:<br/>Query → Recommend → Approve → Book"]
+```
+
+A complete transactional Agent requires all three patterns operating simultaneously:
+- **Multi-tool composition** gives the Agent the ability to perform complex queries
+- **Structured output** enables downstream systems to reliably consume query results
+- **Tool approval** ensures side-effect operations don't exceed authority
+
+---
+
+## 🔑 Framework Comparison Cheat Sheet
+
+| Concept | Raw SDK | qwen-agent |
+|---------|---------|------------|
+| Tool definition | JSON Schema + Python function, manually maintained | `@register_tool` + `BaseTool` subclass, params as dict list |
+| Multi-tool composition | All placed in `TOOLS_SCHEMA` list | `function_list=["tool1", "tool2", ...]` |
+| Tool parameter format | Standard JSON Schema `properties` + `required` | `parameters` list: `[{"name": ..., "type": ..., "required": ...}]` |
+| Structured output | JSON format in system_message + Pydantic validation | Same (framework has no `response_format`) |
+| Approval mode | Check `SENSITIVE_TOOLS` set in tool calling loop | `input()` interception inside `BaseTool.call()` |
+| Tool calling loop | `while True` manual management | `Assistant.run()` handles internally |
+
+---
+
+## 🚀 Try It
+
+```bash
+cd 04-tool-use/code_samples
+
+# Raw version (multi-tool + structured output; approval mode skipped by default)
+python 04-python-agent-framework.py
+
+# Framework version (same three demos)
+python 04-qwen-agent-framework.py
+
+# To try tool approval mode, edit code and uncomment demo_3_approval_mode()
+```
+
+---
+
+## 🔮 Next Up
+
+With the foundational patterns of tool use covered, the next post dives into **Agentic RAG** — when an Agent needs to retrieve external knowledge, how do you design the retrieval strategy? Is a single vector search enough? How do you let the Agent decide when to search and what to search for?
+
+---
+
+## ✍️ Closing
+
+The three tool-use patterns in one line each:
+
+- **Multi-tool composition**: Don't preset call paths for the LLM — let it decide call order based on tool descriptions
+- **Structured output**: Don't make downstream code guess at formats — use Pydantic as a data contract, making JSON the interface language between Agent and system
+- **Tool approval**: Side-effect operations aren't forbidden — they just can't be automatic. A single `input()` line is the most flexible safety valve.
+
+Tools are the Agent's hands. Master tool design, and your Agent goes from "can chat" to "can act."
