@@ -45,7 +45,7 @@ author: "Chen Zhao"
 
 微软的 AI Agents for Beginners 课程用 Microsoft Agent Framework (MAF)，核心代码长这样：
 
-```python
+```text
 provider = AzureAIProjectAgentProvider(credential=AzureCliCredential())
 
 @tool(approval_mode="never_require")
@@ -82,7 +82,7 @@ response = await agent.run("Which destinations are available?")
 
 写完第一版代码后，我意识到所有 Agent 框架的底层机制都可以浓缩成下面这段：
 
-```python
+```text
 def run_agent(system_prompt: str, user_message: str) -> str:
     messages = [
         {"role": "system", "content": system_prompt},
@@ -143,7 +143,7 @@ def run_agent(system_prompt: str, user_message: str) -> str:
 
 ### 第一步：连接模型
 
-```python
+```text
 from openai import OpenAI
 
 client = OpenAI(
@@ -157,7 +157,7 @@ MODEL = "qwen-flash"
 
 ### 第二步：定义工具
 
-```python
+```text
 def get_destinations() -> list[str]:
     """获取热门度假目的地列表。"""
     return ["巴塞罗那", "巴黎", "柏林", "东京",
@@ -189,7 +189,7 @@ TOOL_MAP = {"get_destinations": get_destinations}
 
 在实际聊天场景中，用户不想等整个回复生成完才看到文字。通过一个额外的流式请求来实现逐字输出：
 
-```python
+```text
 # 当 tool_calls 完成后，用 stream=True 重新请求最终回复
 stream = client.chat.completions.create(
     model=MODEL, messages=messages, stream=True,
@@ -208,7 +208,7 @@ for chunk in stream:
 
 写完原生版后，我又用 [qwen-agent](https://github.com/QwenLM/Qwen-Agent) 框架重写了一版。以下是两版的对照：
 
-```python
+```text
 # ── 原生版：定义工具需要 JSON Schema ──
 TOOLS_SCHEMA = [{"type": "function", "function": {...}}]
 
@@ -244,7 +244,7 @@ for responses in agent.run(messages=[{"role": "user", "content": "..."}]):
 
 ## 🚀 运行起来
 
-```bash
+```text
 # 1. 获取 API Key
 #    👉 https://bailian.console.aliyun.com/
 #    开通 DashScope，获取 sk-xxx 格式的 Key（新用户有免费额度）
