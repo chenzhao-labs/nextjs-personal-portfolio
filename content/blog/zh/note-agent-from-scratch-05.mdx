@@ -1,0 +1,255 @@
+---
+title: "Agentic RAG：让 Agent 自己决定何时检索、检索什么"
+date: "2026-06-11"
+updated: "2026-06-11"
+summary: "传统 RAG 的总流程是先检索再生成。Agentic RAG 把检索权交还给 Agent——由 LLM 自主决定何时检索、用什么关键词检索、是否需要二次检索验证。本文通过旅游知识库搜索的完整案例，拆解 Agentic RAG 的核心机制和 Producer-Checker 迭代模式。"
+tags: ["AI Agent", "RAG", "Agentic RAG", "Tool Calling", "Qwen-Agent", "Python"]
+author: "Chen Zhao"
+---
+
+前面四篇文章讲了 Agent 的本质（tool calling 循环）、框架抽象层次、设计模式、以及工具使用的三种模式。这些让 Agent 具备了"调用工具获取信息"的能力。
+
+但调用工具 ≠ 智能检索。一个真正智能的 Agent 应该能自主决定：我需不需要查资料？查什么关键词？查到的信息够不够？要不要换个角度再查一次？
+
+这就是 Agentic RAG 要解决的问题。
+
+---
+
+📦 **相关链接**
+
+- 项目仓库：[Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- 本课代码：[05-agentic-rag/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/05-agentic-rag/code_samples)
+- 原生 SDK 版：[05-python-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/05-agentic-rag/code_samples/05-python-agent-framework.py)
+- qwen-agent 框架版：[05-qwen-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/05-agentic-rag/code_samples/05-qwen-agent-framework.py)
+
+---
+
+## 🎯 传统 RAG vs Agentic RAG：区别在哪
+
+```text
+flowchart LR
+    subgraph "传统 RAG（固定流程）"
+        A1["用户提问"] --> A2["向量检索<br/>（固定 top-k）"]
+        A2 --> A3["拼接上下文"]
+        A3 --> A4["LLM 生成回答"]
+    end
+
+    subgraph "Agentic RAG（自主决策）"
+        B1["用户提问"] --> B2{"LLM 判断:<br/>需要检索吗?"}
+        B2 -->|不需要| B6["直接回答"]
+        B2 -->|需要| B3["LLM 生成检索关键词"]
+        B3 --> B4["执行检索工具"]
+        B4 --> B5{"结果够用?"}
+        B5 -->|不够| B3
+        B5 -->|够了| B6
+    end
+```
+
+传统 RAG 的问题不在效果，而在于**缺乏自主性**：
+
+| 维度 | 传统 RAG | Agentic RAG |
+|------|---------|-------------|
+| **检索时机** | 每次都检索（固定流程） | LLM 自主判断是否需要 |
+| **检索关键词** | 用户原始 query（不改写） | LLM 自主生成/优化检索词 |
+| **检索轮次** | 一次 | 可多次迭代 |
+| **验证机制** | 无 | 可自我检查、二次验证 |
+| **适用场景** | 简单问答 | 需要多步推理、多源对比的复杂查询 |
+
+核心差异：**检索不再是固定的前置步骤，而是 Agent 手中一个可随时调用的工具**。
+
+---
+
+## 🔬 核心机制：把知识库封装为带参数的搜索工具
+
+在 Agentic RAG 中，知识库不是一个"检索步骤"，而是一个**工具**：
+
+### 工具定义（原生 SDK）
+
+```text
+TRAVEL_KNOWLEDGE_BASE = {
+    "巴塞罗那": "巴塞罗那是西班牙加泰罗尼亚的国际化首都。最佳访问时间为3-5月...",
+    "东京": "东京是日本的首都，将超现代与传统相结合。最佳旅游时间是3-4月...",
+    "巴黎": "巴黎是法国的首都，全球艺术、时尚和文化的中心。最佳旅游时间是4-6月...",
+    "开普敦": "开普敦位于南非西南端。最佳旅游时间为11月至3月...",
+}
+
+TOOLS_SCHEMA = [{
+    "type": "function",
+    "function": {
+        "name": "search_travel_knowledge",
+        "description": "搜索旅游知识库获取目的地信息，包括最佳旅行时间、特色、日均费用等",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "关于旅游目的地的搜索查询，可以是目的地名称或关键词",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+}]
+```
+
+关键设计点：
+
+- **工具名 `search_travel_knowledge`** — LLM 看到这个名字就知道它是用来查资料的工具
+- **参数 `query`** — LLM 自主决定传什么搜索关键词。它可能传 "建筑 高迪" 而不是用户的原始提问
+- **返回文本** — 工具返回匹配的知识库条目，LLM 再基于这些条目生成回答
+
+这和一个普通的"调 API 获取数据"工具没有任何区别——这正是 Agentic RAG 的精髓：**检索只是另一种 tool call**。
+
+### 工具定义（qwen-agent 框架版）
+
+对比框架版的写法，参数定义方式不同但语义完全一致：
+
+```text
+@register_tool("search_travel_knowledge")
+class SearchTravelKnowledge(BaseTool):
+    description = "搜索旅游知识库获取目的地信息，包括最佳旅行时间、特色、日均费用等"
+    parameters = [
+        {
+            "name": "query",
+            "type": "string",
+            "description": "关于旅游目的地的搜索查询",
+            "required": True,
+        },
+    ]
+
+    def call(self, params: str, **kwargs) -> str:
+        args = json.loads(params)
+        query = args.get("query", "")
+        # 在 TRAVEL_KNOWLEDGE_BASE 中搜索匹配条目
+        ...
+```
+
+---
+
+## 🧠 Agent 的工作流：检索作为 tool calling 的一环
+
+```text
+sequenceDiagram
+    participant User
+    participant Agent
+    participant SearchTool
+    participant KnowledgeBase
+
+    User->>Agent: 我想参观有出色建筑的地方，有什么推荐？
+    Agent->>Agent: 判断：需要检索知识库
+    Agent->>SearchTool: search_travel_knowledge(query="建筑 高迪")
+    SearchTool->>KnowledgeBase: 匹配知识库
+    KnowledgeBase-->>SearchTool: 巴塞罗那、巴黎（匹配条目）
+    SearchTool-->>Agent: 巴塞罗那: 高迪建筑...\n巴黎: 卢浮宫...
+    Agent->>Agent: 基于检索结果生成回答
+    Agent-->>User: 推荐巴塞罗那和巴黎，它们的建筑特色是...
+```
+
+这个流程和 Lesson 04 的"多工具组合"完全一致。Agent 不知道 `search_travel_knowledge` 后面是一个向量数据库还是硬编码字典——它只知道"有个工具能查资料，我需要的时候调用它"。
+
+---
+
+## 🔄 Producer-Checker 模式：迭代检索的精髓
+
+基础版 Agentic RAG 解决了"自主检索"的问题。但还有一个进阶需求：**怎么确保检索到的信息是完整和准确的？**
+
+答案是 **Producer-Checker 模式**——通过 system prompt 引导 Agent 做两次检索：
+
+```
+系统消息（Checker 模式）：
+1. 首先搜索相关目的地
+2. 对每个找到的目的地，再次以目的地名称进行搜索以获取完整信息
+3. 使用经过验证的信息比较各个选项
+4. 提出最终推荐，包括具体费用、最佳旅行时间和亮点
+5. 如果任何细节似乎不完整，再次搜索确认后再回答
+```
+
+```text
+flowchart TD
+    A["用户: 预算$175/天，4月出发，哪里合适?"] --> B["第1轮检索:<br/>search_travel_knowledge(query='April budget 175')"]
+    B --> C["结果: 巴塞罗那($150-200)、开普敦($100-150)"]
+    C --> D{"结果完整吗?"}
+    D -->|不够详细| E["第2轮检索:<br/>search_travel_knowledge(query='Barcelona')<br/>search_travel_knowledge(query='Cape Town')"]
+    E --> F["获取每个目的地的完整详情"]
+    F --> G["比较：开普敦$100-150(符合预算)，巴塞罗那$150-200(勉强)"]
+    G --> H["最终推荐: 开普敦，11-3月最佳; 巴塞罗那可作为备选"]
+```
+
+**Producer** = 第一次检索，获取候选列表
+**Checker** = 第二次检索，用候选名深入验证
+
+两轮检索的关键词不同：第一轮是"模糊搜索"（按预算和月份），第二轮是"精确搜索"（按目的地名）。这种"从宽到窄、从模糊到精确"的检索策略，正是 Agentic RAG 相比传统 RAG 的核心优势。
+
+---
+
+## 📊 两种 Agent 配置对比
+
+本课代码中实现了两个 Agent，它们的区别仅在于 **system prompt** 的策略指令不同：
+
+| 维度 | 基础 RAG Agent | Producer-Checker Agent |
+|------|---------------|----------------------|
+| **system prompt 策略** | "回答前始终先检索知识库" | "检索 → 用目的地名再次检索 → 比较 → 确认" |
+| **检索轮次** | 通常 1 轮 | 至少 2 轮（宽搜 + 精搜） |
+| **适用场景** | 简单事实查询 | 需要对比分析、预算匹配的复杂查询 |
+| **代码差异** | 只有 system_prompt 不同 | 完全相同的工具和循环 |
+
+**关键认知：Agent 的"智能程度"取决于 system prompt 中的策略指令，而非工具数量。** 工具还是那些工具，但指令不同，Agent 的行为模式完全不同。
+
+---
+
+## 🔑 框架对比速查
+
+| 概念 | 原生 SDK | qwen-agent |
+|------|----------|------------|
+| 知识库 | 硬编码字典 `TRAVEL_KNOWLEDGE_BASE` | 同左 |
+| 检索工具 | JSON Schema + Python 函数 + `TOOL_MAP` | `@register_tool` + `BaseTool` 类 |
+| 带参数工具 | `json.loads(tc.function.arguments)` 提取参数 | `params` 自动传入，内部 `json.loads` |
+| Agent 创建 | `run_agent(system_prompt, user_message)` | `Assistant(llm=..., system_message=..., function_list=[...])` |
+| 多策略切换 | 换 `system_prompt` 参数 | 换 `system_message` 参数 |
+| tool calling 循环 | 手动 `while True` | 框架内部自动 |
+
+---
+
+## 💡 三个关键认知
+
+**1. 检索只是另一种 tool call**
+
+Agent 不知道也不关心 `search_travel_knowledge` 后面是什么——向量数据库、SQL 查询、网页爬虫、硬编码字典，对 Agent 来说都一样。这让检索工具可以随时替换实现而不影响 Agent 的行为。
+
+**2. system prompt 决定了 Agent 的检索策略**
+
+同样的工具 + 同样的知识库，不同的 system prompt 产生完全不同的检索行为。基础 prompt 让 Agent "检索一次就够"，Checker prompt 让 Agent "检索两次再对比"。Agent 的智能不在工具里，在 prompt 的策略里。
+
+**3. 迭代检索依赖工具的参数设计**
+
+为什么 Producer-Checker 模式能"第二次用更精确的关键词检索"？因为搜索工具接受 `query` 参数。如果工具是无参的 `get_all_documents()`，Agent 就没有优化检索词的空间。**工具的参数设计决定了 Agent 的智能上限。**
+
+---
+
+## 🚀 运行
+
+```text
+cd 05-agentic-rag/code_samples
+
+# 原生版（基础 RAG + Producer-Checker 两个示例）
+python 05-python-agent-framework.py
+
+# 框架版（同样的两个示例）
+python 05-qwen-agent-framework.py
+```
+
+---
+
+## 🔮 下一篇
+
+下一篇进入 **系统消息框架**——如何用 LLM 自动生成高质量的系统提示词？什么是 meta-prompt？这和构建可信赖的 AI Agent 有什么关系？
+
+---
+
+## ✍️ 结语
+
+Agentic RAG 的核心思想只有一句话：**不要让流程决定检索，让 Agent 决定检索。**
+
+传统 RAG 的"先检索再生成"是一个固定的流水线。Agentic RAG 把检索变成一个工具，Agent 自主决定调不调、调几次、用什么关键词调。这不是技术架构的变化，而是设计理念的变化——从"流程主导"变成"Agent 主导"。
+
+当你把知识库封装成工具的那一刻，你的 RAG 系统就不再是一个"检索+生成"的管道，而是一个能思考、能验证、能迭代的智能体。

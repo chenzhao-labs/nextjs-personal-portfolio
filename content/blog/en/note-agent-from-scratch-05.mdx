@@ -1,0 +1,252 @@
+---
+title: "Agentic RAG: Letting the Agent Decide When and What to Retrieve"
+date: "2026-06-11"
+updated: "2026-06-11"
+summary: "Traditional RAG follows a fixed retrieve-then-generate pipeline. Agentic RAG returns retrieval authority to the Agent — letting the LLM autonomously decide when to retrieve, what keywords to use, and whether a second retrieval is needed for verification. This post dissects Agentic RAG's core mechanism and the Producer-Checker iterative pattern through a complete travel knowledge base search case study."
+tags: ["AI Agent", "RAG", "Agentic RAG", "Tool Calling", "Qwen-Agent", "Python"]
+author: "Chen Zhao"
+---
+
+The previous four posts covered Agent fundamentals (the tool calling loop), framework abstraction layers, design patterns, and three tool-use patterns. These gave Agents the ability to "call tools to fetch information."
+
+But calling tools ≠ intelligent retrieval. A truly intelligent Agent should autonomously decide: Do I need to look something up? What keywords should I search for? Is the retrieved information sufficient? Should I re-search from a different angle?
+
+That's exactly what Agentic RAG addresses.
+
+---
+
+📦 **Links**
+
+- Project repo: [Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- Lesson code: [05-agentic-rag/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/05-agentic-rag/code_samples)
+- Raw SDK version: [05-python-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/05-agentic-rag/code_samples/05-python-agent-framework.py)
+- qwen-agent version: [05-qwen-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/05-agentic-rag/code_samples/05-qwen-agent-framework.py)
+
+---
+
+## 🎯 Traditional RAG vs Agentic RAG: What's the Difference
+
+```text
+flowchart LR
+    subgraph "Traditional RAG (Fixed Pipeline)"
+        A1["User Query"] --> A2["Vector Retrieval<br/>(fixed top-k)"]
+        A2 --> A3["Concatenate Context"]
+        A3 --> A4["LLM Generates Answer"]
+    end
+
+    subgraph "Agentic RAG (Autonomous Decisions)"
+        B1["User Query"] --> B2{"LLM decides:<br/>need retrieval?"}
+        B2 -->|No| B6["Answer directly"]
+        B2 -->|Yes| B3["LLM generates search keywords"]
+        B3 --> B4["Execute retrieval tool"]
+        B4 --> B5{"Results sufficient?"}
+        B5 -->|No| B3
+        B5 -->|Yes| B6
+    end
+```
+
+Traditional RAG's problem isn't quality — it's the **lack of autonomy**:
+
+| Dimension | Traditional RAG | Agentic RAG |
+|-----------|----------------|-------------|
+| **Retrieval timing** | Every time (fixed pipeline) | LLM decides autonomously |
+| **Search keywords** | Raw user query (no rewriting) | LLM generates/optimizes keywords |
+| **Retrieval rounds** | Once | Can iterate multiple times |
+| **Verification** | None | Self-check, second-pass verification |
+| **Best for** | Simple Q&A | Complex queries needing multi-step reasoning, cross-source comparison |
+
+Core difference: **retrieval is no longer a fixed pre-processing step — it's just another tool the Agent can call whenever needed**.
+
+---
+
+## 🔬 Core Mechanism: Wrapping the Knowledge Base as a Parameterized Search Tool
+
+In Agentic RAG, the knowledge base is not a "retrieval step" — it's a **tool**:
+
+### Tool Definition (Raw SDK)
+
+```text
+TRAVEL_KNOWLEDGE_BASE = {
+    "Barcelona": "Barcelona is Spain's cosmopolitan capital of Catalonia...",
+    "Tokyo": "Tokyo is Japan's capital, mixing ultramodern with traditional...",
+    "Paris": "Paris is France's capital and a global center for art...",
+    "Cape Town": "Cape Town sits on South Africa's southwest tip...",
+}
+
+TOOLS_SCHEMA = [{
+    "type": "function",
+    "function": {
+        "name": "search_travel_knowledge",
+        "description": "Search the travel knowledge base for destination info...",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query — destination name or keywords",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+}]
+```
+
+Key design points:
+
+- **Tool name `search_travel_knowledge`** — The LLM sees this name and immediately knows it's for looking up information
+- **Parameter `query`** — The LLM autonomously decides what keyword to pass. It might send "architecture Gaudí" instead of the user's raw question
+- **Return value** — The tool returns matching knowledge base entries; the LLM generates its answer based on these entries
+
+This is indistinguishable from a regular "call an API for data" tool — and that's precisely the insight: **retrieval is just another tool call**.
+
+### Tool Definition (qwen-agent Framework Version)
+
+Comparing the framework version — same semantics, different syntax:
+
+```text
+@register_tool("search_travel_knowledge")
+class SearchTravelKnowledge(BaseTool):
+    description = "Search the travel knowledge base for destination info..."
+    parameters = [
+        {"name": "query", "type": "string",
+         "description": "Search query about a travel destination",
+         "required": True},
+    ]
+
+    def call(self, params: str, **kwargs) -> str:
+        args = json.loads(params)
+        query = args.get("query", "")
+        # Search TRAVEL_KNOWLEDGE_BASE for matching entries
+        ...
+```
+
+---
+
+## 🧠 The Agent's Workflow: Retrieval as One Link in the Tool Calling Chain
+
+```text
+sequenceDiagram
+    participant User
+    participant Agent
+    participant SearchTool
+    participant KnowledgeBase
+
+    User->>Agent: I'm interested in places with great architecture. Recommendations?
+    Agent->>Agent: Decision: need to search knowledge base
+    Agent->>SearchTool: search_travel_knowledge(query="architecture Gaudí")
+    SearchTool->>KnowledgeBase: Match against knowledge base
+    KnowledgeBase-->>SearchTool: Barcelona, Paris (matching entries)
+    SearchTool-->>Agent: Barcelona: Gaudí architecture...\nParis: Louvre...
+    Agent->>Agent: Generate answer from retrieved results
+    Agent-->>User: Recommend Barcelona and Paris. Their architectural...
+```
+
+This flow is identical to Lesson 04's "multi-tool composition." The Agent doesn't know whether `search_travel_knowledge` is backed by a vector database or a hardcoded dictionary — it only knows "there's a tool to look things up, and I call it when needed."
+
+---
+
+## 🔄 The Producer-Checker Pattern: The Essence of Iterative Retrieval
+
+Basic Agentic RAG solves "autonomous retrieval." But there's a more advanced need: **how do you ensure the retrieved information is complete and accurate?**
+
+The answer is the **Producer-Checker pattern** — guiding the Agent through a two-pass retrieval via the system prompt:
+
+```
+System message (Checker mode):
+1. Search for relevant destinations first
+2. For each destination found, search again with the destination name for full details
+3. Compare the options using verified information
+4. Present a final recommendation with specific costs, best travel times, and highlights
+5. If any detail seems incomplete, search once more to confirm before responding
+```
+
+```text
+flowchart TD
+    A["User: $175/day budget, traveling in April. Where fits?"] --> B["Round 1:<br/>search(query='April budget 175')"]
+    B --> C["Results: Barcelona($150-200), Cape Town($100-150)"]
+    C --> D{"Results complete?"}
+    D -->|Not detailed enough| E["Round 2:<br/>search(query='Barcelona')<br/>search(query='Cape Town')"]
+    E --> F["Full details for each destination"]
+    F --> G["Compare: Cape Town $100-150 (fits), Barcelona $150-200 (borderline)"]
+    G --> H["Final recommendation: Cape Town, Nov-Mar best; Barcelona as backup"]
+```
+
+**Producer** = first retrieval, getting a candidate list
+**Checker** = second retrieval, using candidate names for deep verification
+
+The keywords differ between rounds: the first is "fuzzy search" (by budget and month), the second is "precise search" (by destination name). This "broad-to-narrow, fuzzy-to-precise" retrieval strategy is Agentic RAG's core advantage over traditional RAG.
+
+---
+
+## 📊 Comparing the Two Agent Configurations
+
+The two Agents in this lesson differ only in their **system prompt strategy instructions**:
+
+| Dimension | Basic RAG Agent | Producer-Checker Agent |
+|-----------|----------------|----------------------|
+| **system prompt strategy** | "Always search before answering" | "Search → re-search by name → compare → confirm" |
+| **Retrieval rounds** | Typically 1 | At least 2 (broad + deep) |
+| **Best for** | Simple fact lookup | Comparative analysis, budget matching |
+| **Code difference** | Only `system_prompt` differs | Same tools, same loop |
+
+**Key insight: an Agent's "intelligence" comes from the strategy instructions in its system prompt, not the number of tools.** The tools are identical, but different instructions produce completely different behavioral patterns.
+
+---
+
+## 🔑 Framework Comparison Cheat Sheet
+
+| Concept | Raw SDK | qwen-agent |
+|---------|---------|------------|
+| Knowledge base | Hardcoded `TRAVEL_KNOWLEDGE_BASE` dict | Same |
+| Search tool | JSON Schema + Python function + `TOOL_MAP` | `@register_tool` + `BaseTool` class |
+| Parameterized tool | `json.loads(tc.function.arguments)` extract args | `params` auto-passed, `json.loads` internally |
+| Agent creation | `run_agent(system_prompt, user_message)` | `Assistant(llm=..., system_message=..., function_list=[...])` |
+| Strategy switching | Change `system_prompt` parameter | Change `system_message` parameter |
+| Tool calling loop | Manual `while True` | Framework handles internally |
+
+---
+
+## 💡 Three Key Insights
+
+**1. Retrieval is just another tool call**
+
+The Agent neither knows nor cares what backs `search_travel_knowledge` — vector DB, SQL query, web scraper, hardcoded dict — it's all the same to the Agent. This means you can swap the retrieval implementation without changing the Agent's behavior.
+
+**2. The system prompt determines the Agent's retrieval strategy**
+
+Same tools + same knowledge base, different system prompts produce completely different retrieval behaviors. The basic prompt tells the Agent "search once, that's enough." The Checker prompt tells it "search twice, then compare." The Agent's intelligence isn't in the tools — it's in the prompt's strategy.
+
+**3. Iterative retrieval depends on parameter design**
+
+Why can the Producer-Checker pattern "search again with a more precise keyword"? Because the search tool accepts a `query` parameter. If the tool were a parameterless `get_all_documents()`, the Agent would have no room to optimize search terms. **The tool's parameter design determines the upper bound of the Agent's intelligence.**
+
+---
+
+## 🚀 Running
+
+```text
+cd 05-agentic-rag/code_samples
+
+# Raw SDK version (basic RAG + Producer-Checker demos)
+python 05-python-agent-framework.py
+
+# Framework version (same two demos)
+python 05-qwen-agent-framework.py
+```
+
+---
+
+## 🔮 Next Post
+
+Next up: **System Message Framework** — how to use an LLM to automatically generate high-quality system prompts. What is a meta-prompt? And how does this relate to building trustworthy AI Agents?
+
+---
+
+## ✍️ Closing
+
+Agentic RAG boils down to one sentence: **don't let the pipeline decide when to retrieve; let the Agent decide.**
+
+Traditional RAG's "retrieve then generate" is a fixed assembly line. Agentic RAG turns retrieval into a tool — the Agent autonomously decides whether to call it, how many times, and with what keywords. This isn't a technical architecture change — it's a design philosophy change: from "pipeline-driven" to "Agent-driven."
+
+The moment you wrap your knowledge base as a tool, your RAG system ceases to be a "retrieval + generation" pipe and becomes an intelligent agent that can think, verify, and iterate.
