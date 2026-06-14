@@ -1,0 +1,198 @@
+---
+title: "系统消息框架：用 LLM 自动生成高质量 System Prompt"
+date: "2026-06-14"
+updated: "2026-06-14"
+summary: "手工编写 system prompt 耗时、不一致、难扩展。系统消息框架（System Message Framework）用一个 meta-prompt 让 LLM 帮你自动生成 system prompt——你只需告诉它角色、公司和职责。本文拆解这个两步生成流程，并探讨它和构建可信赖 AI Agent 之间的关系。"
+tags: ["AI Agent", "System Prompt", "Meta-Prompt", "Trustworthy AI", "Qwen-Agent", "Python"]
+author: "Chen Zhao"
+---
+
+前面五篇文章都在讲 Agent 怎么用工具、怎么检索、怎么设计循环。但有一个更基础的问题一直被跳过了：**system prompt 怎么写？**
+
+手工写一个好的 system prompt 需要反复调试。写短了 Agent 行为不稳定，写长了 token 成本高。更麻烦的是，如果你需要创建 10 个不同角色的 Agent，每个都要手写一份 system prompt——格式不一致、风格不统一、质量参差不齐。
+
+系统消息框架（System Message Framework）解决的就是这个问题。
+
+---
+
+📦 **相关链接**
+
+- 项目仓库：[Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- 本课代码：[06-building-trustworthy-agents/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/06-building-trustworthy-agents/code_samples)
+- 原生 SDK 版：[06-python-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/06-building-trustworthy-agents/code_samples/06-python-agent-framework.py)
+- qwen-agent 框架版：[06-qwen-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/06-building-trustworthy-agents/code_samples/06-qwen-agent-framework.py)
+
+---
+
+## 🎯 问题：手工写 System Prompt 的三个痛点
+
+假设你要为一家旅行社构建以下 Agent：
+
+- 航班预订 Agent（查航班、比价格、订票）
+- 酒店 Agent（查房源、比位置、预订）
+- 客服 Agent（处理退改签、投诉）
+- 行程规划 Agent（根据偏好推荐路线）
+
+每个 Agent 都需要一份详细、结构化的 system prompt。手工写的结果是：
+- 第一个写得很认真，后三个越来越敷衍
+- 格式不统一（这个用 markdown，那个用 plain text）
+- 缺少边界条件说明（哪些能做、哪些不能做）
+- 每次修改需要人工逐份更新
+
+---
+
+## 🔬 解法：用一个 Meta-Prompt 生成所有 System Prompt
+
+```text
+flowchart LR
+    A["Meta-Prompt<br/>（系统提示词生成专家）"] --> B["输入：角色 + 公司 + 职责"]
+    B --> C["LLM 生成详细 System Prompt"]
+    C --> D1["航班 Agent"]
+    C --> D2["酒店 Agent"]
+    C --> D3["客服 Agent"]
+    C --> D4["行程 Agent"]
+```
+
+三步流程：
+
+### 步骤 1：定义 Meta-Prompt
+
+```text
+META_SYSTEM_PROMPT = """你是创建 AI 代理助手的专家。
+你将会得到一个公司名称、职位、职责以及其他信息，这些信息将用于生成系统提示。
+为了创建系统提示，请尽可能详细描述，并提供一个结构化的格式，让使用大语言模型的系统能够更好地理解 AI 助手的角色和职责。"""
+```
+
+这个 prompt 的角色不是"帮用户完成任务"，而是**"生成另一个 Agent 的 system prompt"**。这是元层次（meta-level）的思考——用 LLM 来设计 LLM 的行为规范。
+
+### 步骤 2：输入角色描述
+
+```text
+user_message = (
+    "你是Contoso旅行社的旅游代理 "
+    "负责预订航班的那个人。"
+)
+```
+
+不是写完整的 system prompt，而是写一句简洁的角色描述。告诉生成专家"我要的是什么样的 Agent"。
+
+### 步骤 3：LLM 自动生成完整 System Prompt
+
+```text
+response = client.chat.completions.create(
+    model=MODEL,
+    messages=[
+        {"role": "system", "content": META_SYSTEM_PROMPT},
+        {"role": "user", "content": user_message},
+    ],
+    temperature=1.0,
+    max_tokens=1000,
+)
+generated_prompt = response.choices[0].message.content
+```
+
+LLM 输出一份详尽、结构化的 system prompt，包括：
+- 角色目标（Objective）
+- 核心职责（Key Responsibilities，按序号展开）
+- 操作指南（Operating Guidelines）
+- 工具和系统说明（Tools and Systems）
+- 语气和风格要求（Tone and Style）
+
+---
+
+## 🧪 验证：用生成的 System Prompt 测试 Agent
+
+生成的 system prompt 不是终点——你需要验证它是否有效：
+
+```text
+def test_generated_prompt(system_prompt: str, test_query: str) -> str:
+    """用生成的系统提示词测试 Agent 行为。"""
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": test_query},
+        ],
+    )
+    return response.choices[0].message.content
+```
+
+测试用例设计原则：
+
+| 测试类型 | 示例 query | 验证点 |
+|---------|-----------|--------|
+| 正常路径 | "帮我订北京到东京下周一的航班" | Agent 按角色要求回答 |
+| 边界条件 | "帮我订去火星的航班" | Agent 合理拒绝而非胡编 |
+| 角色越界 | "帮我写一篇作文" | Agent 说明自己的职责范围 |
+
+---
+
+## 📊 同一框架 × 两种角色 = 完全不同的输出
+
+本课代码中实现了三个示例，展示同一个 meta-prompt 如何为不同角色生成差异化的 system prompt：
+
+| 角色 | 公司 | 职责 | 生成结果特点 |
+|------|------|------|------------|
+| Travel Agent | Contoso Travel | booking flights | 航班查询、价格比较、预订流程、行李政策 |
+| Tech Support | CloudServe Inc. | troubleshooting cloud infra | 故障诊断、系统日志、权限管理、升级流程 |
+
+同一个 meta-prompt，输入不同的角色描述，输出完全适配该角色的 system prompt。这就是"框架"的价值——**模板复用，实例分化**。
+
+---
+
+## 🔑 框架对比速查
+
+| 概念 | 原生 SDK | qwen-agent |
+|------|----------|------------|
+| Meta-Prompt 生成 | `client.chat.completions.create()` 两步调用 | `Assistant(system_message=..., function_list=[])` + `run_once()` |
+| 本课特殊性 | **无工具调用**，纯文本交互 | 同左，`function_list=[]` |
+| Agent 测试 | 直接 `chat.completions.create()` | 再创建一个 `Assistant` 实例 |
+| 相比其他课 | 代码最短（~120行），无 tool calling 循环 | 同左 |
+
+本课是全部 18 课中代码量最小的一课，但概念密度不小。它回答的是一个元问题：**"谁来决定 Agent 的行为边界？"**
+
+---
+
+## 💡 和构建可信赖 Agent 的关系
+
+系统消息框架本质上是一个**安全基础设施**。原因如下：
+
+**1. 一致性 = 可审计性**
+
+用同一个 meta-prompt 生成的 10 个 Agent 的 system prompt，在风格、结构、边界定义上保持一致。审计时可以快速定位"这个 Agent 被允许做什么、不允许做什么"。
+
+**2. 边界清晰 = 风险可控**
+
+手工写的 system prompt 容易遗漏边界条件。Meta-prompt 的模板中包含了"操作指南""限制条件"等结构化章节，迫使生成器明确列出每个 Agent 的能力边界。边界写清楚了，越权行为就更容易被检测。
+
+**3. 可迭代 = 可持续改进**
+
+当发现安全漏洞时（如某个 Agent 在特定 prompt 下会越权），可以调整 meta-prompt 模板，然后重新生成所有 Agent 的 system prompt——而不是逐个人工修改。
+
+---
+
+## 🚀 运行
+
+```text
+cd 06-building-trustworthy-agents/code_samples
+
+# 原生版（三步：生成 → 验证 → 新角色演示）
+python 06-python-agent-framework.py
+
+# 框架版
+python 06-qwen-agent-framework.py
+```
+
+---
+
+## 🔮 下一篇
+
+下一篇进入 **规划设计模式**——当任务复杂到单 Agent 无法直接完成时，如何用 Planning Agent 做任务分解，再用 Concierge Agent 按依赖顺序执行？Pydantic 结构化输出在多 Agent 协作中扮演什么角色？
+
+---
+
+## ✍️ 结语
+
+系统消息框架的精髓不在于"用 LLM 生成 system prompt"这个操作本身——这只是两层 API 调用的叠加。它的价值在于**把 system prompt 从"手工艺品"变成了"可规模化生产的设计文档"**。
+
+当你的项目有 10 个 Agent 时，meta-prompt 是你保持 sanity 的唯一方式。当安全审计来的时候，结构化、一致性的 system prompt 是你最好的辩护。

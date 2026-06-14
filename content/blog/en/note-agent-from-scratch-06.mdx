@@ -1,0 +1,201 @@
+---
+title: "System Message Framework: Auto-Generating High-Quality System Prompts with LLMs"
+date: "2026-06-14"
+updated: "2026-06-14"
+summary: "Hand-writing system prompts is time-consuming, inconsistent, and hard to scale. The System Message Framework uses a single meta-prompt to let an LLM automatically generate system prompts — you only need to provide the role, company, and responsibility. This post dissects the two-step generation flow and explores its connection to building trustworthy AI Agents."
+tags: ["AI Agent", "System Prompt", "Meta-Prompt", "Trustworthy AI", "Qwen-Agent", "Python"]
+author: "Chen Zhao"
+---
+
+The previous five posts covered how Agents use tools, retrieve information, and design loops. But a more fundamental question has been skipped: **how do you write a good system prompt?**
+
+Hand-crafting a solid system prompt requires repeated debugging. Too short, and the Agent's behavior is unstable. Too long, and token costs climb. Worse, if you need to create 10 Agents with different roles, each one demands a manually written system prompt — inconsistent formatting, uneven quality, hard to maintain.
+
+The System Message Framework solves exactly this problem.
+
+---
+
+📦 **Links**
+
+- Project repo: [Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- Lesson code: [06-building-trustworthy-agents/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/06-building-trustworthy-agents/code_samples)
+- Raw SDK version: [06-python-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/06-building-trustworthy-agents/code_samples/06-python-agent-framework.py)
+- qwen-agent version: [06-qwen-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/06-building-trustworthy-agents/code_samples/06-qwen-agent-framework.py)
+
+---
+
+## 🎯 The Problem: Three Pain Points of Hand-Writing System Prompts
+
+Say you're building the following Agents for a travel company:
+
+- Flight booking Agent (search flights, compare prices, book tickets)
+- Hotel Agent (find rooms, compare locations, reserve)
+- Customer service Agent (handle cancellations, changes, complaints)
+- Itinerary planning Agent (recommend routes based on preferences)
+
+Each needs a detailed, structured system prompt. Hand-writing them leads to:
+- The first one is careful, the next three get sloppier
+- Inconsistent formatting (one uses markdown, another plain text)
+- Missing boundary conditions (what can / can't the Agent do)
+- Every revision requires manual updates across all copies
+
+---
+
+## 🔬 The Solution: One Meta-Prompt to Generate All System Prompts
+
+```text
+flowchart LR
+    A["Meta-Prompt<br/>(system prompt generation expert)"] --> B["Input: role + company + responsibility"]
+    B --> C["LLM generates detailed System Prompt"]
+    C --> D1["Flight Agent"]
+    C --> D2["Hotel Agent"]
+    C --> D3["Support Agent"]
+    C --> D4["Itinerary Agent"]
+```
+
+Three-step flow:
+
+### Step 1: Define the Meta-Prompt
+
+```text
+META_SYSTEM_PROMPT = """You are an expert at creating AI agent assistants.
+You will be provided a company name, role, responsibilities and other
+information that you will use to provide a system prompt for.
+To create the system prompt, be descriptive as possible and provide a structure
+that a system using an LLM can better understand the role and responsibilities
+of the AI assistant."""
+```
+
+This prompt's role is not "help the user complete a task" — it's **"generate another Agent's system prompt."** This is meta-level thinking — using an LLM to design behavioral specifications for an LLM.
+
+### Step 2: Input the Role Description
+
+```text
+user_message = (
+    "You are a travel agent at Contoso Travel "
+    "that is responsible for booking flights."
+)
+```
+
+Not writing a full system prompt — just a concise role description. Tell the generation expert "what kind of Agent I want."
+
+### Step 3: LLM Auto-Generates the Full System Prompt
+
+```text
+response = client.chat.completions.create(
+    model=MODEL,
+    messages=[
+        {"role": "system", "content": META_SYSTEM_PROMPT},
+        {"role": "user", "content": user_message},
+    ],
+    temperature=1.0,
+    max_tokens=1000,
+)
+generated_prompt = response.choices[0].message.content
+```
+
+The LLM outputs a detailed, structured system prompt including:
+- Objective
+- Key Responsibilities (numbered and expanded)
+- Operating Guidelines
+- Tools and Systems description
+- Tone and Style requirements
+
+---
+
+## 🧪 Verification: Testing the Generated System Prompt
+
+The generated system prompt isn't the end — you need to verify it works:
+
+```text
+def test_generated_prompt(system_prompt: str, test_query: str) -> str:
+    """Test Agent behavior with the generated system prompt."""
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": test_query},
+        ],
+    )
+    return response.choices[0].message.content
+```
+
+Test case design principles:
+
+| Test Type | Example Query | Verification Point |
+|-----------|--------------|-------------------|
+| Happy path | "Book me a flight Beijing to Tokyo next Monday" | Agent responds per role requirements |
+| Boundary | "Book me a flight to Mars" | Agent reasonably refuses, doesn't hallucinate |
+| Role overreach | "Write me an essay" | Agent states its scope of responsibility |
+
+---
+
+## 📊 Same Framework × Two Roles = Radically Different Outputs
+
+The lesson code implements three demos showing how one meta-prompt generates differentiated system prompts for different roles:
+
+| Role | Company | Responsibility | Generated Output Characteristics |
+|------|---------|---------------|-------------------------------|
+| Travel Agent | Contoso Travel | booking flights | Flight search, price comparison, booking flow, baggage policies |
+| Tech Support | CloudServe Inc. | troubleshooting cloud infra | Fault diagnosis, system logs, permission management, escalation flow |
+
+Same meta-prompt, different role descriptions, outputs fully customized to each role. This is the value of a "framework" — **template reuse, instance differentiation**.
+
+---
+
+## 🔑 Framework Comparison Cheat Sheet
+
+| Concept | Raw SDK | qwen-agent |
+|---------|---------|------------|
+| Meta-prompt generation | `client.chat.completions.create()` two calls | `Assistant(system_message=..., function_list=[])` + `run_once()` |
+| This lesson's special case | **No tool calling**, pure text interaction | Same, `function_list=[]` |
+| Agent testing | Direct `chat.completions.create()` | Create another `Assistant` instance |
+| Vs other lessons | Shortest code (~120 lines), no tool calling loop | Same |
+
+This lesson has the smallest code volume across all 18 lessons, but its conceptual density is high. It answers a meta-question: **"who decides an Agent's behavioral boundaries?"**
+
+---
+
+## 💡 Connection to Building Trustworthy Agents
+
+The System Message Framework is fundamentally a **security infrastructure**. Here's why:
+
+**1. Consistency = Auditability**
+
+When 10 Agents' system prompts are generated from the same meta-prompt, they share a consistent style, structure, and boundary definition. During an audit, you can quickly locate "what this Agent is allowed and not allowed to do."
+
+**2. Clear Boundaries = Controllable Risk**
+
+Hand-written system prompts easily miss boundary conditions. The meta-prompt's template includes structured sections like "Operating Guidelines" and "Constraints," forcing the generator to explicitly list each Agent's capability boundaries. When boundaries are clear, overreach is easier to detect.
+
+**3. Iterable = Continuously Improvable**
+
+When a security vulnerability is discovered (e.g., a specific prompt causes an Agent to overreach), you adjust the meta-prompt template, then regenerate all Agents' system prompts — rather than manually editing each one.
+
+---
+
+## 🚀 Running
+
+```text
+cd 06-building-trustworthy-agents/code_samples
+
+# Raw SDK version (three steps: generate → verify → new role demo)
+python 06-python-agent-framework.py
+
+# Framework version
+python 06-qwen-agent-framework.py
+```
+
+---
+
+## 🔮 Next Post
+
+Next up: **Planning Design Pattern** — when a task is too complex for a single Agent to handle directly, how do you use a Planning Agent for task decomposition and a Concierge Agent for dependency-ordered execution? What role does Pydantic structured output play in multi-Agent collaboration?
+
+---
+
+## ✍️ Closing
+
+The System Message Framework's essence isn't the act of "using an LLM to generate a system prompt" — that's just two API calls stacked together. Its value lies in **turning system prompts from "handicrafts" into "scalable design documents."**
+
+When your project has 10 Agents, the meta-prompt is your only way to stay sane. When the security audit arrives, structured, consistent system prompts are your best defense.
