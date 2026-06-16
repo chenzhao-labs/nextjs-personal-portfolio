@@ -1,0 +1,273 @@
+---
+title: "Planning Design Pattern: Task Decomposition + Structured Output + Multi-Agent Execution"
+date: "2026-06-16"
+updated: "2026-06-16"
+summary: "Complex tasks can't be solved in one shot. The Planning Design Pattern separates 'thinking' from 'doing' — the Planning Agent decomposes user requests into a structured list of subtasks, and the Concierge Agent executes them in dependency order. This post dissects task decomposition, Pydantic structured output, and the planning-execution separation through a complete 7-day Paris trip case study."
+tags: ["AI Agent", "Planning", "Pydantic", "Structured Output", "Multi-Agent", "Qwen-Agent", "Python"]
+author: "Chen Zhao"
+---
+
+The previous six posts built up Agent fundamentals: tool calling loop → multi-tool composition → Agentic RAG → System Message Framework. But these all tackled "single Agent, single task" problems.
+
+When a user says "Plan a 7-day trip to Paris, budget $5000, we love art, food, and history" — this isn't a single tool call problem. You need to first figure out what to do (flights, hotels, activities, budget allocation), then execute each step. That's the Planning Design Pattern.
+
+---
+
+📦 **Links**
+
+- Project repo: [Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- Lesson code: [07-planning-design/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/07-planning-design/code_samples)
+- Raw SDK version: [07-python-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/07-planning-design/code_samples/07-python-agent-framework.py)
+- qwen-agent version: [07-qwen-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/07-planning-design/code_samples/07-qwen-agent-framework.py)
+
+---
+
+## 🎯 Core Idea: Separating "Thinking" from "Doing"
+
+```text
+flowchart TD
+    User["User: Plan 7-day Paris trip, $5000 budget"] --> Planner["Planning Agent<br/>(the 'thinker')"]
+    Planner --> Plan["Structured TravelPlan<br/>├─ #1 Book flights (flight_agent, high)<br/>├─ #2 Reserve hotel (hotel_agent, high, deps: [#1])<br/>├─ #3 Louvre tickets (activity_agent, medium)<br/>├─ #4 Food tour (activity_agent, medium)<br/>└─ #5 Versailles (activity_agent, low)"]
+    Plan --> Concierge["Concierge Agent<br/>(the 'doer')"]
+    Concierge --> T1["book_flight → #FLT-4821"]
+    Concierge --> T2["reserve_hotel → #HTL-2938"]
+    Concierge --> T3["book_activity → #ACT-7742"]
+    Concierge --> T4["book_activity → #ACT-1835"]
+    Concierge --> Result["✅ All done, results summarized"]
+```
+
+This design solves three fundamental problems:
+- **Single-Agent hallucination**: One Agent simultaneously thinking about "what to do" and "how to do it" tends to skip steps or miss things
+- **Unverifiable output**: Free-text output can't be reliably checked by downstream code
+- **Tight coupling**: Changing execution logic requires changing planning logic
+
+---
+
+## 📐 Layer 1: Pydantic Models Define Task Structure
+
+The prerequisite for task decomposition is a reliable data structure to describe "subtasks." Pydantic serves as the contract between the LLM and code:
+
+```text
+from pydantic import BaseModel
+
+class TravelSubTask(BaseModel):
+    task_id: int              # Subtask sequence number
+    description: str          # What this task does
+    assigned_agent: str       # Which specialist Agent handles it
+    priority: str             # high / medium / low
+    dependencies: list[int] = []  # Subtask IDs that must complete first
+
+class TravelPlan(BaseModel):
+    destination: str
+    trip_duration_days: int
+    subtasks: list[TravelSubTask]
+    total_estimated_budget_usd: int
+    notes: str
+```
+
+This model answers five questions:
+
+| Field | Question Answered |
+|-------|------------------|
+| `task_id` | "Which task number is this?" |
+| `description` | "What does this task need to accomplish?" |
+| `assigned_agent` | "Who does it?" |
+| `priority` | "How important? Can this be skipped if budget is tight?" |
+| `dependencies` | "What must be done before this can start?" |
+
+The `dependencies` field is particularly critical — it lets the Agent know implicit logic like "must book flights before booking hotels." Without dependency management, a "plan" is just an unordered to-do list.
+
+---
+
+## 🧠 Layer 2: Planning Agent Generates Structured Plans
+
+The Planning Agent uses no tools — its sole job is to "think" — receiving a natural language request and outputting a structured `TravelPlan`:
+
+```text
+def create_travel_plan(user_request: str) -> TravelPlan:
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": (
+                "You are a travel planning agent. When given a travel request:\n"
+                "1. Break it into specific subtasks (flights, hotels, activities, logistics)\n"
+                "2. Assign each subtask to the appropriate specialist agent\n"
+                "3. Set priorities and identify dependencies between tasks\n"
+                "4. Estimate the total budget\n\n"
+                f"Output MUST be valid JSON matching this schema:\n{PLAN_SCHEMA_DESC}\n"
+                "Reply with ONLY the JSON object, no other text."
+            )},
+            {"role": "user", "content": user_request},
+        ],
+        response_format={"type": "json_object"},
+    )
+    return TravelPlan.model_validate_json(response.choices[0].message.content)
+```
+
+Key design points:
+
+- **`response_format={"type": "json_object"}`** — Tells the Qwen API to output pure JSON. This is a standard OpenAI SDK parameter that DashScope supports
+- **`model_validate_json()`** — Pydantic provides the final validation layer. If the LLM outputs JSON with wrong field types, it throws immediately
+- **JSON Schema example in system prompt** — The LLM doesn't innately know your Pydantic structure; you must explicitly tell it in the prompt
+
+### Why not use the framework's `response_format=PydanticModel`?
+
+MAF supports `await agent.run("...", response_format=TravelPlan)`, returning a Pydantic object directly. But raw `response_format={"type": "json_object"}` + manual `model_validate_json()` has advantages:
+
+1. **Framework-agnostic** — Works with any LLM API that supports JSON mode
+2. **Visible errors** — On validation failure, you see the LLM's raw JSON output, not a swallowed exception
+3. **Format tolerance** — You can add ` ```json ``` ` stripping and other resilience logic
+
+---
+
+## ⚙️ Layer 3: Concierge Agent Executes the Plan
+
+The Planning Agent outputs a "plan"; the Concierge Agent is responsible for "execution." The Concierge holds three specialist tools:
+
+```text
+# Three execution tools
+TOOLS_SCHEMA = [
+    {"function": {"name": "book_flight", ...}},     # Book flights
+    {"function": {"name": "reserve_hotel", ...}},   # Reserve hotels
+    {"function": {"name": "book_activity", ...}},   # Book activities
+]
+
+TOOL_MAP = {
+    "book_flight": book_flight,
+    "reserve_hotel": reserve_hotel,
+    "book_activity": book_activity,
+}
+```
+
+The Concierge doesn't receive the user's raw request — it receives the Planning Agent's structured task list:
+
+```
+Execute the following travel plan for Paris (7 days, $5000 budget):
+- [high] #1. Book round-trip flights to Paris (agent: flight_agent, deps: [])
+- [high] #2. Reserve a hotel in Paris (agent: hotel_agent, deps: [1])
+- [medium] #3. Book Louvre Museum tickets (agent: activity_agent, deps: [2])
+- [medium] #4. Book French cuisine food tour (agent: activity_agent, deps: [2])
+- [low] #5. Book Versailles day trip (agent: activity_agent, deps: [2])
+```
+
+The Concierge executes tools in dependency order based on this list:
+
+```text
+sequenceDiagram
+    participant Concierge as Concierge Agent
+    participant Flight as book_flight
+    participant Hotel as reserve_hotel
+    participant Activity as book_activity
+
+    Concierge->>Flight: #1 Book Paris flights
+    Flight-->>Concierge: #FLT-4821
+    Concierge->>Hotel: #2 Reserve Paris hotel (depends on #1)
+    Hotel-->>Concierge: #HTL-2938
+    Concierge->>Activity: #3 Louvre tickets (depends on #2)
+    Activity-->>Concierge: #ACT-7742
+    Concierge->>Activity: #4 Food tour (depends on #2)
+    Activity-->>Concierge: #ACT-1835
+    Concierge->>Activity: #5 Versailles (depends on #2, low priority)
+    Activity-->>Concierge: #ACT-5591
+    Concierge-->>User: All booked. Summary of confirmation numbers
+```
+
+The `dependencies` design lets the Concierge execute in topological order — avoiding logic errors like "booking activities before the hotel exists."
+
+---
+
+## 📊 Three-Layer Architecture Overview
+
+```text
+flowchart TD
+    subgraph "Layer 1: Data Models"
+        M1["TravelSubTask<br/>(Pydantic BaseModel)"]
+        M2["TravelPlan<br/>(Pydantic BaseModel)"]
+    end
+
+    subgraph "Layer 2: Planning"
+        P1["Planning Agent<br/>(no tools, pure reasoning)"]
+        P2["response_format={'type': 'json_object'}"]
+        P3["model_validate_json()"]
+    end
+
+    subgraph "Layer 3: Execution"
+        E1["Concierge Agent<br/>(holds 3 tools)"]
+        E2["Tool calling loop"]
+        E3["Execute in dependency order"]
+    end
+
+    M1 --> M2
+    M2 --> P1
+    P1 --> P2 --> P3
+    P3 --> E1
+    E1 --> E2 --> E3
+```
+
+Each layer does exactly one thing:
+- **Data Model Layer**: Defines "what a task structure should look like"
+- **Planning Layer**: Generates structured task lists from natural language
+- **Execution Layer**: Calls tools one by one according to the plan
+
+---
+
+## 🔑 Framework Comparison Cheat Sheet
+
+| Concept | Raw SDK | qwen-agent |
+|---------|---------|------------|
+| Pydantic models | `TravelSubTask` + `TravelPlan` | Same |
+| Structured output | `response_format={"type": "json_object"}` + `model_validate_json()` | Same, with ` ```json ``` ` tolerance |
+| Planning Agent | `run_agent()` single call (no tools) | `Assistant(function_list=[])` + `run_once()` |
+| Execution tool defs | JSON Schema ×3 + Python functions ×3 | `@register_tool` + `BaseTool` subclass ×3 |
+| Execution Agent | `run_concierge()` manual tool calling loop | `Assistant(function_list=[...])` auto loop |
+| Lines of code | 300 (longest in the course) | 230 |
+
+---
+
+## 💡 Four Key Insights
+
+**1. Separating planning from execution = reducing LLM cognitive load**
+
+Having one Agent simultaneously think about "what to do" and "how to do it" is like having one person be both project manager and engineer. After separation, the Planning Agent only needs to figure out the task structure (a reasoning task LLMs are relatively good at), and the Concierge Agent only needs to follow a checklist (basic tool calling ability). Both tasks become easier individually.
+
+**2. `dependencies` is the core field of planning**
+
+A task list without dependencies is just a to-do list. With dependencies, it becomes a DAG (Directed Acyclic Graph) — verifiable (any circular dependencies?), parallelizable (independent tasks can run concurrently).
+
+**3. `response_format` ≠ framework-exclusive feature**
+
+This isn't an MAF patent — it's a standard OpenAI API parameter fully supported by Qwen DashScope. You don't need any Agent framework to get structured output capability.
+
+**4. Pydantic is the type-safety layer between Agents and code**
+
+LLM output is unreliable (potential hallucinations, format errors, missing fields). Pydantic's `model_validate_json()` is the last line of defense — data that passes validation can be safely passed to downstream systems.
+
+---
+
+## 🚀 Running
+
+```text
+cd 07-planning-design/code_samples
+
+# Raw SDK version (Step 1: plan → Step 2: execute)
+python 07-python-agent-framework.py
+
+# Framework version
+python 07-qwen-agent-framework.py
+```
+
+---
+
+## 🔮 Next Post
+
+Next up: **Multi-Agent Systems** — when collaboration moves beyond one-to-one (planner→executor) to many-to-many (multiple Agents collaborating in parallel, message passing, state sharing), how should the architecture be designed?
+
+---
+
+## ✍️ Closing
+
+The Planning Design Pattern's essence: **let the LLM think first, then act.**
+
+The Planning Agent outputs a structured plan; the Concierge Agent follows it. The interface between them isn't natural language — it's a Pydantic-defined data structure. This makes the "thinking" and "doing" interface type-safe — just like separating interface definition from implementation in software engineering.
+
+In this design, Pydantic isn't just a data validation tool — it's the communication protocol between Agents.

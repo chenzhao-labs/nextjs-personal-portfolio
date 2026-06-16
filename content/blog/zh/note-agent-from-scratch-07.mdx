@@ -1,0 +1,273 @@
+---
+title: "规划设计模式：任务分解 + 结构化输出 + 多 Agent 执行"
+date: "2026-06-16"
+updated: "2026-06-16"
+summary: "复杂任务不能一步到位。规划设计模式（Planning Design Pattern）将'想'和'做'分离——Planning Agent 把用户需求拆分为结构化的子任务列表，Concierge Agent 按依赖顺序逐一执行。本文通过 7 天巴黎旅行的完整案例，拆解任务分解、Pydantic 结构化输出、规划-执行分离三层设计。"
+tags: ["AI Agent", "Planning", "Pydantic", "Structured Output", "Multi-Agent", "Qwen-Agent", "Python"]
+author: "Chen Zhao"
+---
+
+前面六篇文章构建了 Agent 的基础能力：tool calling 循环 → 多工具组合 → Agentic RAG → 系统消息框架。但这些都在解决"单 Agent 单任务"的问题。
+
+当用户说"帮我规划一个 7 天的巴黎旅行，预算 $5000，我们喜欢艺术、美食和历史"——这不是一个 tool call 能解决的问题。你需要先想清楚要做什么（航班、酒店、活动、预算分配），再做每一步。这就是规划设计模式。
+
+---
+
+📦 **相关链接**
+
+- 项目仓库：[Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- 本课代码：[07-planning-design/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/07-planning-design/code_samples)
+- 原生 SDK 版：[07-python-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/07-planning-design/code_samples/07-python-agent-framework.py)
+- qwen-agent 框架版：[07-qwen-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/07-planning-design/code_samples/07-qwen-agent-framework.py)
+
+---
+
+## 🎯 核心思想：把"想"和"做"分开
+
+```text
+flowchart TD
+    User["用户: 帮我规划 7 天巴黎旅行，预算 $5000"] --> Planner["Planning Agent<br/>（负责'想'）"]
+    Planner --> Plan["结构化 TravelPlan<br/>├─ #1 订航班 (flight_agent, high)<br/>├─ #2 订酒店 (hotel_agent, high, deps: [#1])<br/>├─ #3 订卢浮宫门票 (activity_agent, medium)<br/>├─ #4 订美食 tour (activity_agent, medium)<br/>└─ #5 订凡尔赛宫 (activity_agent, low)"]
+    Plan --> Concierge["Concierge Agent<br/>（负责'做'）"]
+    Concierge --> T1["book_flight → #FLT-4821"]
+    Concierge --> T2["reserve_hotel → #HTL-2938"]
+    Concierge --> T3["book_activity → #ACT-7742"]
+    Concierge --> T4["book_activity → #ACT-1835"]
+    Concierge --> Result["✅ 执行完毕，汇总结果"]
+```
+
+这一设计解决了三个根本问题：
+- **单 Agent 幻觉**：一个 Agent 同时想"该做什么"和"怎么做"，容易跳步或遗漏
+- **不可验证**：自由文本输出无法被下游代码可靠检查
+- **耦合过高**：修改执行逻辑需要改动规划逻辑
+
+---
+
+## 📐 第一层：Pydantic 模型定义任务结构
+
+任务分解的前提是有一种可靠的数据结构来描述"子任务"。Pydantic 在这里充当了 LLM 和代码之间的契约：
+
+```text
+from pydantic import BaseModel
+
+class TravelSubTask(BaseModel):
+    task_id: int              # 子任务序号
+    description: str          # 任务描述
+    assigned_agent: str       # 指派给哪个专业 Agent
+    priority: str             # high / medium / low
+    dependencies: list[int] = []  # 依赖的子任务 ID（必须先完成的）
+
+class TravelPlan(BaseModel):
+    destination: str
+    trip_duration_days: int
+    subtasks: list[TravelSubTask]
+    total_estimated_budget_usd: int
+    notes: str
+```
+
+这个模型回答了五个问题：
+
+| 字段 | 回答的问题 |
+|------|-----------|
+| `task_id` | "这是第几个任务？" |
+| `description` | "这个任务要做什么？" |
+| `assigned_agent` | "谁来做？" |
+| `priority` | "有多重要？预算紧张可以跳过吗？" |
+| `dependencies` | "做这个之前必须先完成哪个？" |
+
+`dependencies` 字段尤其关键——它让 Agent 知道"订酒店之前必须先订航班"这种隐式逻辑。没有依赖管理，"规划"就只是一张无序的待办清单。
+
+---
+
+## 🧠 第二层：Planning Agent 生成结构化计划
+
+Planning Agent 不使用工具——它的唯一任务是"想"——接收自然语言请求，输出一个结构化的 `TravelPlan`：
+
+```text
+def create_travel_plan(user_request: str) -> TravelPlan:
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": (
+                "You are a travel planning agent. When given a travel request:\n"
+                "1. Break it into specific subtasks (flights, hotels, activities, logistics)\n"
+                "2. Assign each subtask to the appropriate specialist agent\n"
+                "3. Set priorities and identify dependencies between tasks\n"
+                "4. Estimate the total budget\n\n"
+                f"Output MUST be valid JSON matching this schema:\n{PLAN_SCHEMA_DESC}\n"
+                "Reply with ONLY the JSON object, no other text."
+            )},
+            {"role": "user", "content": user_request},
+        ],
+        response_format={"type": "json_object"},
+    )
+    return TravelPlan.model_validate_json(response.choices[0].message.content)
+```
+
+关键设计点：
+
+- **`response_format={"type": "json_object"}`** — 告诉千问 API 输出纯 JSON。这是 openai SDK 的参数，通义千问兼容它
+- **`model_validate_json()`** — Pydantic 做最后一道校验。如果 LLM 输出的 JSON 字段类型不对，直接抛异常
+- **system prompt 中包含 JSON Schema 示例** — LLM 不是天生知道你的 Pydantic 结构，需要在 prompt 里明确告诉它
+
+### 为什么不用框架的 `response_format=PydanticModel`？
+
+MAF 支持 `await agent.run("...", response_format=TravelPlan)`，直接返回 Pydantic 对象。但原生的 `response_format={"type": "json_object"}` + 手动 `model_validate_json()` 有几个好处：
+
+1. **框架无关** — 换任何 LLM API 都能用，只要它支持 JSON 模式
+2. **可见错误** — 校验失败时你能看到 LLM 的原始 JSON 输出，而不是框架内部吞掉异常
+3. **格式容错** — 可以加 ` ```json ``` ` 包裹处理等容错逻辑
+
+---
+
+## ⚙️ 第三层：Concierge Agent 执行计划
+
+Planning Agent 输出的是"计划"，Concierge Agent 负责"执行"。Concierge 持有三个专业工具：
+
+```text
+# 三个执行工具
+TOOLS_SCHEMA = [
+    {"function": {"name": "book_flight", ...}},     # 预订航班
+    {"function": {"name": "reserve_hotel", ...}},   # 预订酒店
+    {"function": {"name": "book_activity", ...}},   # 预订活动
+]
+
+TOOL_MAP = {
+    "book_flight": book_flight,
+    "reserve_hotel": reserve_hotel,
+    "book_activity": book_activity,
+}
+```
+
+Concierge 收到的不是用户的原始需求，而是 Planning Agent 产出的结构化任务列表：
+
+```
+Execute the following travel plan for 巴黎 (7 days, $5000 budget):
+- [high] #1. Book round-trip flights to Paris (agent: flight_agent, deps: [])
+- [high] #2. Reserve a hotel in Paris (agent: hotel_agent, deps: [1])
+- [medium] #3. Book Louvre Museum tickets (agent: activity_agent, deps: [2])
+- [medium] #4. Book French cuisine food tour (agent: activity_agent, deps: [2])
+- [low] #5. Book Versailles day trip (agent: activity_agent, deps: [2])
+```
+
+Concierge 根据这个列表，按依赖顺序逐一调用工具：
+
+```text
+sequenceDiagram
+    participant Concierge as Concierge Agent
+    participant Flight as book_flight
+    participant Hotel as reserve_hotel
+    participant Activity as book_activity
+
+    Concierge->>Flight: #1 订巴黎航班
+    Flight-->>Concierge: #FLT-4821
+    Concierge->>Hotel: #2 订巴黎酒店 (依赖 #1)
+    Hotel-->>Concierge: #HTL-2938
+    Concierge->>Activity: #3 卢浮宫门票 (依赖 #2)
+    Activity-->>Concierge: #ACT-7742
+    Concierge->>Activity: #4 美食 tour (依赖 #2)
+    Activity-->>Concierge: #ACT-1835
+    Concierge->>Activity: #5 凡尔赛宫 (依赖 #2, low priority)
+    Activity-->>Concierge: #ACT-5591
+    Concierge-->>User: 全部预订完成，汇总确认号
+```
+
+`dependencies` 的设计让 Concierge 能按拓扑顺序执行，不会出现"酒店还没订就去订活动"的逻辑错误。
+
+---
+
+## 📊 三层架构总览
+
+```text
+flowchart TD
+    subgraph "第一层：数据模型"
+        M1["TravelSubTask<br/>（Pydantic BaseModel）"]
+        M2["TravelPlan<br/>（Pydantic BaseModel）"]
+    end
+
+    subgraph "第二层：规划"
+        P1["Planning Agent<br/>（无工具，纯推理）"]
+        P2["response_format={'type': 'json_object'}"]
+        P3["model_validate_json()"]
+    end
+
+    subgraph "第三层：执行"
+        E1["Concierge Agent<br/>（持有 3 个工具）"]
+        E2["tool calling 循环"]
+        E3["按依赖顺序执行"]
+    end
+
+    M1 --> M2
+    M2 --> P1
+    P1 --> P2 --> P3
+    P3 --> E1
+    E1 --> E2 --> E3
+```
+
+每一层只做一件事：
+- **数据模型层**：定义"任务结构应该长什么样"
+- **规划层**：从自然语言生成结构化的任务列表
+- **执行层**：按计划逐个调用工具
+
+---
+
+## 🔑 框架对比速查
+
+| 概念 | 原生 SDK | qwen-agent |
+|------|----------|------------|
+| Pydantic 模型 | `TravelSubTask` + `TravelPlan` | 同左 |
+| 结构化输出 | `response_format={"type": "json_object"}` + `model_validate_json()` | 同左，增加 ` ```json ``` ` 容错 |
+| 规划 Agent | `run_agent()` 单次调用（无工具） | `Assistant(function_list=[])` + `run_once()` |
+| 执行工具定义 | JSON Schema ×3 + Python 函数 ×3 | `@register_tool` + `BaseTool` 子类 ×3 |
+| 执行 Agent | `run_concierge()` 手动 tool calling 循环 | `Assistant(function_list=[...])` 框架自动循环 |
+| 代码行数 | 300 行（全部课程中最长） | 230 行 |
+
+---
+
+## 💡 四个关键认知
+
+**1. 规划和执行分离 = 降低 LLM 的认知负载**
+
+一个 Agent 同时想"该做什么"和"怎么做"，等于让同一个人既当项目经理又当工程师。分离后，规划 Agent 只需要想清楚任务结构（这对 LLM 来说是相对擅长的推理任务），执行 Agent 只需要照着清单做事（这是 tool calling 的基本能力）。两个任务的难度都降低了。
+
+**2. `dependencies` 是规划的核心字段**
+
+没有依赖关系的"任务列表"只是 to-do list。加上依赖关系后，它变成了一个 DAG（有向无环图）——可以被验证（有没有循环依赖？）、可以被并行化（无依赖的任务可以同时执行）。
+
+**3. `response_format` ≠ 框架专属功能**
+
+这不是 MAF 的专利，而是 OpenAI API 的标准参数，千问 DashScope 完全兼容。你不需要任何 Agent 框架就能获得结构化输出能力。
+
+**4. Pydantic 是 Agent 和代码之间的类型安全层**
+
+LLM 输出是不可靠的（可能有幻觉、格式错误、字段缺失）。Pydantic 的 `model_validate_json()` 是最后一道防线——校验通过的数据可以放心传给下游系统。
+
+---
+
+## 🚀 运行
+
+```text
+cd 07-planning-design/code_samples
+
+# 原生版（步骤 1: 规划 → 步骤 2: 执行）
+python 07-python-agent-framework.py
+
+# 框架版
+python 07-qwen-agent-framework.py
+```
+
+---
+
+## 🔮 下一篇
+
+下一篇进入 **多 Agent 系统**——当协作不再是一对一（规划→执行），而是多对多（多个 Agent 并行协作、消息传递、状态共享）时，架构怎么设计？
+
+---
+
+## ✍️ 结语
+
+规划设计模式的精髓：**让 LLM 先想清楚，再动手。**
+
+Planning Agent 输出了结构化计划，Concierge Agent 照着执行。两者的交互媒介不是自然语言，而是 Pydantic 定义的数据结构。这让"想"和"做"之间的接口变成类型安全的——就像软件工程中把接口定义和实现分离一样。
+
+在这个设计中，Pydantic 不只是数据校验工具，它是 Agent 之间的通信协议。
