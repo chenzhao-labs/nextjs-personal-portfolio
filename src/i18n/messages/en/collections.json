@@ -106,6 +106,24 @@
   "projects": {
     "items": [
       {
+        "title": "StarCore MedLink Smart Healthcare Platform",
+        "href": "https://github.com/chenzhao-labs/StarCore_MedLink_Multi_Medical_Agent.git",
+        "dates": "Jun 2026 - Present",
+        "active": true,
+        "description": "A multi-agent collaborative medical AI system that integrates RAG literature search, medical imaging analysis, web search, and personal health record management",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/StarCore_MedLink_Multi_Medical_Agent.git",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-starcore.jpg",
+        "video": ""
+      },
+      {
         "title": "Building Agent From Scratch",
         "href": "https://github.com/chenzhao-labs/Building_Agent_from_scratch",
         "dates": "Jun 2026 - Present",

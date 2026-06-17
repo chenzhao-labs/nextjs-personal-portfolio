@@ -106,6 +106,24 @@
   "projects": {
     "items": [
       {
+        "title": "星核医联智慧医疗平台",
+        "href": "https://github.com/chenzhao-labs/StarCore_MedLink_Multi_Medical_Agent.git",
+        "dates": "2026年06月 - 至今",
+        "active": true,
+        "description": "多 Agent 协作的医学 AI 系统，集成 RAG 文献检索、医学影像分析、网络搜索和个人健康档案管理",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/StarCore_MedLink_Multi_Medical_Agent.git",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-starcore.jpg",
+        "video": ""
+      },
+      {
         "title": "从0-1开始搭建智能体",
         "href": "https://github.com/chenzhao-labs/Building_Agent_from_scratch",
         "dates": "2026年06月 - 至今",
