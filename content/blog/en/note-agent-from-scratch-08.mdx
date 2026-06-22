@@ -1,0 +1,271 @@
+---
+title: "Three Patterns of Multi-Agent Orchestration: Sequential, Concurrent, Conditional"
+date: "2026-06-22"
+updated: "2026-06-22"
+summary: "Multi-agent systems are not just about having multiple agents. The real challenge is orchestration — how do agents pass data? How do they execute in parallel? How do you branch based on intermediate results? This article implements three orchestration patterns — sequential, concurrent, and conditional — using both LangGraph and qwen-agent, breaking down the core primitives and use cases of each."
+tags: ["AI Agent", "Multi-Agent", "LangGraph", "Workflow", "Orchestration", "Qwen-Agent", "Python"]
+author: "Chen Zhao"
+---
+
+The previous seven articles built a complete chain from single-agent tool calling to Agentic RAG to planning design. But all of these operate within a single-agent system — even Lesson 07's Planning + Concierge is a one-to-one planning-execution collaboration.
+
+When your system needs three, five, or ten agents, the question shifts from "what can an agent do?" to "how do agents collaborate?" This is multi-agent orchestration.
+
+---
+
+📦 **Links**
+
+- Repository: [Building Agent from Scratch](https://github.com/chenzhao-labs/Building_Agent_from_scratch)
+- Code: [08-multi-agent/code_samples/](https://github.com/chenzhao-labs/Building_Agent_from_scratch/tree/main/08-multi-agent/code_samples)
+- LangGraph version: [08-python-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/08-multi-agent/code_samples/08-python-agent-framework.py)
+- qwen-agent version: [08-qwen-agent-framework.py](https://github.com/chenzhao-labs/Building_Agent_from_scratch/blob/main/08-multi-agent/code_samples/08-qwen-agent-framework.py)
+
+---
+
+## 🎯 Three Dimensions of Orchestration
+
+Multi-agent orchestration answers three questions:
+
+| Dimension | Question | Pattern |
+|-----------|----------|---------|
+| Order | "Who goes first?" | Sequential |
+| Parallelism | "What can run simultaneously?" | Concurrent |
+| Branching | "Where next, given this result?" | Conditional |
+
+These three are not mutually exclusive — real systems typically combine them. But understanding each in isolation is the prerequisite for composing them.
+
+---
+
+## 🔗 Pattern 1: Sequential — Sales → Price → Quote
+
+**Scenario**: A customer describes their living room and needs furniture recommendations → pricing → a formal quote. The three steps have a strict order — pricing without recommendations is guesswork; a quote without pricing is meaningless.
+
+```
+flowchart LR
+    User["Customer Request"] --> Sales["Sales-Agent<br/>Recommendations"]
+    Sales --> Price["Price-Agent<br/>Pricing Analysis"]
+    Price --> Quote["Quote-Agent<br/>Formal Quote"]
+    Quote --> Output["📋 Purchase Quote"]
+```
+
+### LangGraph: `add_edge` chain
+
+```text
+from langgraph.graph import StateGraph, END
+
+class SequentialState(TypedDict):
+    user_query: str
+    sales_recommendation: Optional[str]
+    price_analysis: Optional[str]
+    quote: Optional[str]
+
+graph = StateGraph(SequentialState)
+graph.add_node("sales", sales_node)
+graph.add_node("price", price_node)
+graph.add_node("quote", quote_node)
+
+graph.add_edge("sales", "price")
+graph.add_edge("price", "quote")
+graph.add_edge("quote", END)
+graph.set_entry_point("sales")
+
+app = graph.compile()
+for _ in app.stream(initial_state):
+    pass  # Each node streams LLM output to console
+```
+
+Each node is a `(state) -> dict` function — reads upstream output from state, calls the LLM, returns a partial state update. LangGraph executes nodes in the order defined by edges, with `AgentState` as the shared data channel.
+
+### qwen-agent: manual chaining
+
+```text
+sales = Assistant(llm=llm_cfg, name="Sales-Agent", system_message=SALES_INSTRUCTIONS)
+price = Assistant(llm=llm_cfg, name="Price-Agent", system_message=PRICE_INSTRUCTIONS)
+quote = Assistant(llm=llm_cfg, name="Quote-Agent", system_message=QUOTE_INSTRUCTIONS)
+
+rec = run_agent(sales, user_query, "Sales-Agent")
+analysis = run_agent(price, f"Recommendations:\n{rec}\n\nProvide pricing.", "Price-Agent")
+run_agent(quote, f"Recommendations:\n{rec}\n\nPricing:\n{analysis}\n\nGenerate quote.", "Quote-Agent")
+```
+
+No graph engine — data flow is determined entirely by variable passing in code. Three independent agents exchange information through natural language text.
+
+---
+
+## ⚡ Pattern 2: Concurrent — Researcher ‖ Planner
+
+**Scenario**: Planning a trip to Tokyo. Research and planning can happen simultaneously — the researcher checks attractions, weather, and culture; the planner builds the itinerary, transportation, and dining. Neither depends on the other. Total time ≈ max(individual times).
+
+```
+flowchart TD
+    Dispatcher["Dispatcher"] --> Researcher["Researcher-Agent<br/>Attractions/Culture/Weather"]
+    Dispatcher --> Planner["Plan-Agent<br/>Itinerary/Transport/Dining"]
+    Researcher --> Aggregate["Aggregate<br/>Collect Results"]
+    Planner --> Aggregate
+```
+
+### LangGraph: `Send` API fan-out
+
+```text
+from langgraph.graph import Send
+
+class ConcurrentState(TypedDict):
+    user_query: str
+    results: Annotated[list, operator.add]  # reducer merges parallel outputs
+
+def fan_out_to_agents(state) -> list[Send]:
+    return [
+        Send("researcher", {"user_query": state["user_query"], "results": []}),
+        Send("planner",    {"user_query": state["user_query"], "results": []}),
+    ]
+
+graph.add_conditional_edges("dispatcher", fan_out_to_agents)
+graph.add_edge("researcher", "aggregate")
+graph.add_edge("planner", "aggregate")
+```
+
+Key design points:
+- **`Send(target, state)`** — each `Send` creates an independent execution branch; the target node receives a state copy
+- **`Annotated[list, operator.add]`** — when parallel branches return `{"results": [...]}`, the reducer automatically merges them into a single list
+- **Aggregation** — both `researcher` and `planner` point to `aggregate`; the graph waits for both to complete before executing it
+
+### qwen-agent: `asyncio.gather`
+
+```text
+import asyncio
+
+async def run_agent_async(agent, query):
+    messages = [{"role": "user", "content": query}]
+    result = ""
+    for responses in agent.run(messages=messages):
+        if responses:
+            last = responses[-1]
+            if last.get("role") == "assistant" and last.get("content"):
+                result = last["content"]
+    return result
+
+async def run_both():
+    return await asyncio.gather(
+        run_agent_async(researcher, query),
+        run_agent_async(planner, query),
+    )
+
+research_result, plan_result = asyncio.run(run_both())
+```
+
+No graph, no Send, no reducer. Two `Assistant.run()` calls execute concurrently in the same event loop, results collected via `gather`. About 1/3 the code of the LangGraph version, but loses visualization, error isolation, and state tracking that a graph engine provides.
+
+---
+
+## 🔀 Pattern 3: Conditional — Writer ⇄ Reviewer → Publisher
+
+**Scenario**: Content review pipeline. Writer drafts → Reviewer checks (word count ≥ 200) → if pass, Publisher publishes; if fail, back to Writer for revision. This is a DAG with a cycle.
+
+```
+flowchart TD
+    Writer["Writer-Agent<br/>Draft"] --> Reviewer["Reviewer-Agent<br/>Check Length"]
+    Reviewer -->|PASS| Publisher["Publisher-Agent<br/>Publish"]
+    Reviewer -->|REVISE| Writer
+    Publisher --> Output["✅ Published"]
+```
+
+### LangGraph: `add_conditional_edges`
+
+```text
+def route_after_review(state: ConditionalState) -> str:
+    if state["review_result"] == "PASS":
+        return "publisher"
+    if state["iteration"] >= 3:
+        return "publisher"  # Max 3 rounds, force publish
+    return "writer"         # Back for revision
+
+graph.add_conditional_edges(
+    "reviewer",
+    route_after_review,
+    {"writer": "writer", "publisher": "publisher"},
+)
+```
+
+`route_after_review` is a pure function — input state, output the next node name. LangGraph calls it at runtime to decide which edge to follow. Cycles are natural — `writer → reviewer → writer → reviewer → ...` until the routing function returns `publisher`.
+
+### qwen-agent: `for` loop + `if/else`
+
+```text
+for iteration in range(1, max_iterations + 1):
+    draft = run_agent(writer, prompt, f"Writer-Agent (round {iteration})")
+    review = run_agent(reviewer, f"Review draft:\n{draft}", "Reviewer-Agent")
+
+    if "PASS" in review.strip().split("\n")[0].upper():
+        run_agent(publisher, f"Publish:\n{draft}", "Publisher-Agent")
+        break
+    else:
+        prompt = f"Previous draft rejected. Revise:\nOriginal:\n{draft}"
+else:
+    run_agent(publisher, f"Force publish:\n{draft}", "Publisher-Agent")
+```
+
+Essentially the same logic as LangGraph — parse intermediate result → decide next step → possibly loop. The difference: control flow is explicit in code (`for` + `if`), rather than delegated to a graph engine's routing function.
+
+---
+
+## 📊 Pattern Comparison
+
+| Dimension | Sequential | Concurrent | Conditional |
+|-----------|------------|------------|-------------|
+| Agent relationship | Serial dependency | Parallel independent | Dynamic routing |
+| Data flow | Upstream output → downstream input | Same source → independent outputs → merge | Different downstream per branch |
+| LangGraph primitive | `add_edge` | `Send` + `operator.add` | `add_conditional_edges` |
+| qwen-agent primitive | Variable passing | `asyncio.gather` | `for` + `if/else` |
+| Loops | None | None | Yes (review-revise) |
+| Total time | T₁ + T₂ + T₃ | max(T₁, T₂) | Depends on revision rounds |
+
+---
+
+## 🔑 LangGraph vs Manual Orchestration: When to Use Which
+
+**LangGraph advantages**:
+- **Visualization** — `graph.get_graph().draw_mermaid()` generates architecture diagrams directly
+- **State management** — `TypedDict` + reducer auto-merges parallel results
+- **Error isolation** — one node failure doesn't affect other branches (in concurrent mode)
+- **Complex conditions** — multi-way branching without nested `if/else`
+- **Persistence** — built-in checkpointing for pause/resume/rewind
+
+**Manual orchestration advantages**:
+- **Zero abstraction** — control flow is code flow; no need to understand graph engine semantics
+- **Simple debugging** — set breakpoints directly at call sites
+- **Fewer dependencies** — no need to install langgraph
+- **Sufficient for few agents** — with ≤ 3 agents, manual orchestration has less code
+
+**Rule of thumb**: ≥ 4 agents or needs conditional branching/loops → LangGraph. ≤ 3 agents and purely linear → manual is enough.
+
+---
+
+## 🚀 Run
+
+```text
+cd 08-multi-agent/code_samples
+
+# LangGraph version (runs all three patterns sequentially)
+python 08-python-agent-framework.py
+
+# qwen-agent version
+python 08-qwen-agent-framework.py
+```
+
+---
+
+## 🔮 Next
+
+Next article: **Metacognition** — how agents self-reflect, detect errors, and automatically fall back to backup tools when primary ones fail. This is the step from "agents can do things" to "agents know whether they did it well."
+
+---
+
+## ✍️ Conclusion
+
+The essence of multi-agent orchestration is **making control flow explicit**.
+
+In single-agent systems, the LLM implicitly decides which tool to call first and which next — you only see the output, not the process. Multi-agent systems pull control flow out of the LLM's black box and make it an explicit graph or code — you can see who's doing what at each step, how data flows, and which branch was triggered.
+
+MAF's `WorkflowBuilder`, LangGraph's `StateGraph`, even the most primitive manual `run_agent(a1) → run_agent(a2)` — they all do the same thing: **make agent collaboration visible, debuggable, and modifiable**.
+
+The tool is the form. Control flow is the substance.
