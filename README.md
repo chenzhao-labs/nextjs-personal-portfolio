@@ -1,69 +1,67 @@
-# Next.js Personal Portfolio Website
+# 赵陈的个人主页
 
-A modern portfolio website built with Next.js 16, Tailwind CSS 4, and TypeScript, featuring blog support, internationalization (English/Chinese), and dark mode.
+这是我的个人主页源码仓库，用于展示项目实践、实习与工作经历、教育背景、研究成果，以及围绕 AI 与软件开发的学习笔记。
 
-[![Demo Screenshot](.github/asset/sceenshot.png)](https://www.czhao.xyz/)
+[![个人主页预览](.github/asset/sceenshot.png)](https://www.czhao.xyz/)
 
-## Features
+## 在线访问
 
-- 🌍 **International Support**: Built-in English/Chinese switching, easily extensible to other languages
-- 🌗 **Theme Switching**: Supports light/dark mode toggling
-- 📰 **Integrated Blog**: Write posts using MDX format
-- 📱 **Responsive Design**: Perfectly adapts to desktop, tablet, and mobile devices
-- 🤖 **SEO Optimized**: Includes metadata, JSON-LD structured data, and Open Graph tags
-- 🔍 **Search Engine Friendly**: Automatically generates sitemap.xml and robots.txt
-- 📊 **Data Analysis**: Integrates Google Analytics, Google Tag Manager, etc.
-- ⚡ **High Performance**: Optimized loading speed and performance
-- 🎨 **Modern Design**: Uses Tailwind CSS 4 and Shadcn UI components
+- 个人主页：[www.czhao.xyz](https://www.czhao.xyz/)
+- GitHub：[chenzhao-labs](https://github.com/chenzhao-labs)
 
-## Tech Stack
 
-- ⚡ **Next.js 16**: Based on the latest App Router architecture
-- 🔥 **TypeScript**: Provides complete type safety
-- 💎 **Tailwind CSS 4**: Modern styling framework with the latest @import syntax
-- 💅 **UI Components**: Integrated [shadcn/ui](https://ui.shadcn.com/) component library
-- 🎬 **Animation Effects**: Smooth animations powered by Framer Motion
-- 🌐 **Internationalization**: Multi-language support via next-intl
-- 🌙 **Theme Management**: Dark mode support via next-themes
-- ✅ **Code Quality**: Configured ESLint and Prettier to ensure code standards
+## 网站功能
 
-## Preview
+- 中英文双语与深色模式
+- 项目、教育经历、实习与工作经历、奖项等个人履历展示
+- 基于 MDX 的技术博客
+- 响应式布局，适配桌面与移动端
+- SEO、Open Graph、JSON-LD、站点地图与 robots.txt
+- Vercel Analytics 与 Speed Insights 支持
 
-- 📰 **My Portfolio:** [**czhao.xyz**](https://www.czhao.xyz/) 
-- 🎉 **Welcome to my HomePage!**
+## 技术栈
 
-## Quick Start🚀
+- [Next.js 16](https://nextjs.org/) 与 React 19
+- TypeScript
+- [Tailwind CSS 4](https://tailwindcss.com/)
+- [next-intl](https://next-intl.dev/) 国际化
+- [Motion](https://motion.dev/) 动画
+- [shadcn/ui](https://ui.shadcn.com/) 与 Radix UI 组件
+- MDX、React Markdown、Shiki 与 KaTeX
+- [Vercel](https://vercel.com/) 部署、Analytics 与 Speed Insights
 
-Clone the project and start the development server:
+## 本地运行
 
-### 1. Clone and Install Dependencies
+推荐使用 Node.js 18.18 至 22，以及 pnpm。
 
 ```bash
-git clone https://github.com/chenzhao-labs/nextjs-personal-portfolio
+git clone git@github.com:chenzhao-labs/nextjs-personal-portfolio.git
 cd nextjs-personal-portfolio
-pnpm install    # or: npm install | yarn install
+pnpm install
+pnpm dev
 ```
 
-### 2. Start Development Server
+启动后访问 [http://localhost:3000](http://localhost:3000)。
+
+常用命令：
 
 ```bash
-pnpm dev        # or: npm run dev | yarn dev
+pnpm lint
+pnpm build
+pnpm start
 ```
 
-Visit [`http://localhost:3000`](http://localhost:3000) to view your local site.
+## 内容维护
 
-### 3. Customize Your Portfolio
+| 内容 | 位置 |
+| --- | --- |
+| 站点配置与头像 | `src/data/site.ts`、`public/` |
+| 中文个人资料 | `src/i18n/messages/zh/personal.json` |
+| 英文个人资料 | `src/i18n/messages/en/personal.json` |
+| 中英文项目、经历、教育与奖项 | `src/i18n/messages/*/collections.json` |
+| 博客文章 | `content/blog/zh/`、`content/blog/en/` |
+| 项目封面与机构图标 | `public/proj/`、`public/icon/` |
 
-- Edit basic information in `/src/data/site.ts`
-- Modify all interface text and personal information in JSON files under `/src/i18n/messages`
-- Add blog posts in the `/content/blog` directory using Markdown or MDX format
+## 部署
 
-## Deploy
-
-One-click deployment to Vercel:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fchenzhao-labs%2Fnextjs-personal-portfolio)
-
-## Acknowledgements
-
-This project was adapted from the [Nextjs-Portfolio-Blog-Research](https://github.com/zhengzangw/nextjs-portfolio-blog-research) template. Special thanks to the original author [Zangwei Zheng](https://www.zangwei.dev) for the open-source contribution.
+仓库连接至 Vercel 后，推送到 GitHub 会自动触发构建和部署。部署完成后，页脚日期会同步显示该次构建日期。
