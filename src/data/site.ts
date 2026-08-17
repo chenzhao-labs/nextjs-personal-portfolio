@@ -5,8 +5,18 @@
 
 export const BLUR_FADE_DELAY = 0.05; // 页面模糊渐变动画延迟（秒）
 
+// 在构建时生成，Vercel 每次部署会自动更新。
+const buildDate = new Intl.DateTimeFormat("zh-CN", {
+  timeZone: "Asia/Shanghai",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+})
+  .format(new Date())
+  .replaceAll("/", ".");
+
 export const siteConfig = {
   url: "https://www.zangwei.dev", // Use 'www' for vercel recommendation
-  lastUpdated: "2026.02", // 简历最后更新时间
+  lastUpdated: buildDate, // 本次构建日期
   avatarUrl: "/me.png", // 头像
 } as const;

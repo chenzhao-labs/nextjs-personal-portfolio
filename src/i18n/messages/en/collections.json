@@ -106,6 +106,24 @@
   "projects": {
     "items": [
       {
+        "title": "HopCandy",
+        "href": "https://github.com/chenzhao-labs/hopcandy-agentic-rag",
+        "dates": "Jul. 2026 - Present",
+        "active": true,
+        "description": "An observable Agentic RAG workbench for multi-hop question answering over financial annual reports.",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/hopcandy-agentic-rag",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-hopcandy.jpg",
+        "video": ""
+      },
+      {
         "title": "StarCore MedLink Smart Healthcare Platform",
         "href": "https://github.com/chenzhao-labs/StarCore_MedLink_Multi_Medical_Agent.git",
         "dates": "Jun 2026 - Present",
@@ -329,6 +347,17 @@
   },
   "work": {
     "items": [
+      {
+        "company": "Lenovo",
+        "href": "https://www.lenovo.com/",
+        "badges": [],
+        "location": "Beijing",
+        "title": "Agent Development",
+        "logoUrl": "/icon/lenovo.png",
+        "start": "Aug. 2026",
+        "end": "Present",
+        "description": "Agent development."
+      },
       {
         "company": "Nanjing Drum Tower Hospital Group Suqian Hospital",
         "href": "https://www.suqianhospital.com/main.htm",

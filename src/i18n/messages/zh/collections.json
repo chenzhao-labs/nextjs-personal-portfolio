@@ -106,6 +106,24 @@
   "projects": {
     "items": [
       {
+        "title": "跳跳糖（HopCandy）",
+        "href": "https://github.com/chenzhao-labs/hopcandy-agentic-rag",
+        "dates": "2026年07月 - 至今",
+        "active": true,
+        "description": "面向金融年报多跳问答的可观测 Agentic RAG 工作台。",
+        "technologies": [],
+        "authors": "",
+        "links": [
+          {
+            "type": "Github",
+            "href": "https://github.com/chenzhao-labs/hopcandy-agentic-rag",
+            "icon": "github"
+          }
+        ],
+        "image": "/proj/proj-hopcandy.jpg",
+        "video": ""
+      },
+      {
         "title": "星核医联智慧医疗平台",
         "href": "https://github.com/chenzhao-labs/StarCore_MedLink_Multi_Medical_Agent.git",
         "dates": "2026年06月 - 至今",
@@ -239,6 +257,17 @@
   },
   "work": {
     "items": [
+      {
+        "company": "联想",
+        "href": "https://www.lenovo.com/",
+        "badges": [],
+        "location": "北京",
+        "title": "Agent 开发",
+        "logoUrl": "/icon/lenovo.png",
+        "start": "2026年8月",
+        "end": "至今",
+        "description": "Agent 开发"
+      },
       {
         "company": "南京鼓楼医院集团宿迁医院",
         "href": "https://www.suqianhospital.com/main.htm",
