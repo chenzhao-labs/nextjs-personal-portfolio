@@ -403,73 +403,6 @@
       }
     ]
   },
-  "invitedTalks": {
-    "items": [
-      {
-        "host": "QbitAI",
-        "url": "https://zhuanlan.zhihu.com/p/605329331",
-        "date": "2023.02",
-        "title": "点击率预测模型的大批量训练",
-        "logoUrl": "/icon/qbitai.png"
-      },
-      {
-        "host": "TechBeat",
-        "url": "https://www.techbeat.net/talk-info?id=762",
-        "date": "2023.03",
-        "title": "推荐模型的大批量训练",
-        "logoUrl": "/icon/techbeat.png"
-      },
-      {
-        "host": "分布式人工智能（DAI）会议，由 *Wenbin Li* 邀请",
-        "url": "https://docs.google.com/presentation/d/123kehRyZqkr21ZWxjPyMU8_lMx6ki3g9vWIT3E1glQo/edit?usp=sharing",
-        "date": "2023.12",
-        "title": "预训练基础模型上的持续学习",
-        "logoUrl": "/icon/dai.png"
-      },
-      {
-        "host": "新加坡国立大学",
-        "url": "",
-        "date": "2024.03",
-        "title": "视频生成模型",
-        "logoUrl": "/icon/nus.png"
-      },
-      {
-        "host": "英伟达，由 *Yuyang Zhao* 邀请",
-        "url": "",
-        "date": "2025.03",
-        "title": "使用 Open-Sora 进行高效训练",
-        "logoUrl": "/icon/nvidia.png"
-      },
-      {
-        "host": "腾讯，由 *Kai Wang* 邀请",
-        "url": "https://docs.google.com/presentation/d/1-ds5dfFZARYxN60Q_4fjcDV-GFwYpOcCoJzSLIyak-Q/edit?usp=sharing",
-        "date": "2025.09",
-        "title": "从零开始的 AI 视频生成模型",
-        "logoUrl": "/icon/tencent.png"
-      },
-      {
-        "host": "新加坡国立大学",
-        "url": "",
-        "date": "2025.11",
-        "title": "从视频生成到商业智能体",
-        "logoUrl": "/icon/nus.png"
-      }
-    ]
-  },
-  "teaching": {
-    "items": [
-      {
-        "date": "2022年秋季",
-        "location": "新加坡国立大学",
-        "title": "CS5242: 神经网络与深度学习"
-      },
-      {
-        "date": "2020年秋季",
-        "location": "南京大学",
-        "title": "算法分析与设计"
-      }
-    ]
-  },
   "skills": [
     "PyTorch",
     "TensorFlow/Keras",
@@ -495,18 +428,6 @@
     "React",
     "Next.js",
     "Vue"
-  ],
-  "reviewerConferences": [
-    "NeurIPS",
-    "ICLR",
-    "CVPR",
-    "ECCV",
-    "AAAI"
-  ],
-  "reviewerJournals": [
-    "Pattern Recognition",
-    "TIP",
-    "TSMC-S"
   ],
   "social": {
     "GitHub": {

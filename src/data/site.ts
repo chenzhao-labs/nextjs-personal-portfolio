@@ -16,7 +16,7 @@ const buildDate = new Intl.DateTimeFormat("zh-CN", {
   .replaceAll("/", ".");
 
 export const siteConfig = {
-  url: "https://www.zangwei.dev", // Use 'www' for vercel recommendation
+  url: "https://czhao.xyz",
   lastUpdated: buildDate, // 本次构建日期
-  avatarUrl: "/me.png", // 头像
+  avatarUrl: "/portrait/me.png", // 头像
 } as const;

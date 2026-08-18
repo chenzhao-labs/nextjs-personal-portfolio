@@ -403,73 +403,6 @@
       }
     ]
   },
-  "invitedTalks": {
-    "items": [
-      {
-        "host": "QbitAI",
-        "url": "https://zhuanlan.zhihu.com/p/605329331",
-        "date": "2023.02",
-        "title": "Large Batch Training for CTR Prediction Model",
-        "logoUrl": "/icon/qbitai.png"
-      },
-      {
-        "host": "TechBeat",
-        "url": "https://www.techbeat.net/talk-info?id=762",
-        "date": "2023.03",
-        "title": "Large Batch Training for Recommendation Model",
-        "logoUrl": "/icon/techbeat.png"
-      },
-      {
-        "host": "Distributed AI (DAI) Conference, invited by *Wenbin Li*",
-        "url": "https://docs.google.com/presentation/d/123kehRyZqkr21ZWxjPyMU8_lMx6ki3g9vWIT3E1glQo/edit?usp=sharing",
-        "date": "2023.12",
-        "title": "Continual Learning on Pretrained Foundation Models",
-        "logoUrl": "/icon/dai.png"
-      },
-      {
-        "host": "National University of Singapore",
-        "url": "",
-        "date": "2024.03",
-        "title": "Video Generation Model",
-        "logoUrl": "/icon/nus.png"
-      },
-      {
-        "host": "Nvidia, invited by *Yuyang Zhao*",
-        "url": "",
-        "date": "2025.03",
-        "title": "Efficient Training with Open-Sora",
-        "logoUrl": "/icon/nvidia.png"
-      },
-      {
-        "host": "Tencent, invited by *Kai Wang*",
-        "url": "https://docs.google.com/presentation/d/1-ds5dfFZARYxN60Q_4fjcDV-GFwYpOcCoJzSLIyak-Q/edit?usp=sharing",
-        "date": "2025.09",
-        "title": "AI Video Gen Model From Scratch",
-        "logoUrl": "/icon/tencent.png"
-      },
-      {
-        "host": "National University of Singapore",
-        "url": "",
-        "date": "2025.11",
-        "title": "From Video Generation to Commercial Agents",
-        "logoUrl": "/icon/nus.png"
-      }
-    ]
-  },
-  "teaching": {
-    "items": [
-      {
-        "date": "Fall 2022",
-        "location": "National University of Singapore",
-        "title": "CS5242: Neural Networks and Deep Learning"
-      },
-      {
-        "date": "Fall 2020",
-        "location": "Nanjing University",
-        "title": "Algorithm Analysis & Design"
-      }
-    ]
-  },
   "skills": [
     "PyTorch",
     "TensorFlow/Keras",
@@ -495,18 +428,6 @@
     "React",
     "Next.js",
     "Vue"
-  ],
-  "reviewerConferences": [
-    "NeurIPS",
-    "ICLR",
-    "CVPR",
-    "ECCV",
-    "AAAI"
-  ],
-  "reviewerJournals": [
-    "Pattern Recognition",
-    "TIP",
-    "TSMC-S"
   ],
   "social": {
     "GitHub": {

@@ -2,11 +2,11 @@
 
 这是我的个人主页源码仓库，用于展示项目实践、实习与工作经历、教育背景、研究成果，以及围绕 AI 与软件开发的学习笔记。
 
-[![个人主页预览](.github/asset/sceenshot.png)](https://www.czhao.xyz/)
+[![个人主页预览](.github/asset/sceenshot.png)](https://czhao.xyz/)
 
 ## 在线访问
 
-- 个人主页：[www.czhao.xyz](https://www.czhao.xyz/)
+- 个人主页：[czhao.xyz](https://czhao.xyz/)
 - GitHub：[chenzhao-labs](https://github.com/chenzhao-labs)
 
 
