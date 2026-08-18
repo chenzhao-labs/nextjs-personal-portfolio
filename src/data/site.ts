@@ -18,5 +18,5 @@ const buildDate = new Intl.DateTimeFormat("zh-CN", {
 export const siteConfig = {
   url: "https://czhao.xyz",
   lastUpdated: buildDate, // 本次构建日期
-  avatarUrl: "/portrait/me.jpg", // 头像
+  avatarUrl: "/portrait/me.png", // 头像
 } as const;
